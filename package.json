@@ -28,6 +28,9 @@
     "typescript": "^3.2.2"
   },
   "dependencies": {
+    "@gameye/steam-api": "^1.0.0",
+    "@types/node-fetch": "^2.1.4",
+    "node-fetch": "^2.3.0",
     "tslib": "^1.9.3"
   }
 }

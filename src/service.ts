@@ -115,10 +115,6 @@ export class UpdaterService extends EventEmitter {
         this.intervalHandle = undefined;
     }
 
-    private async initialize() {
-        // get versions from cdn
-    }
-
     private async step() {
         const { gameInfo } = this;
 

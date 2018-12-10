@@ -15,7 +15,10 @@
             "outFiles": [
                 "${workspaceRoot}/node/**/*.js"
             ],
-            "preLaunchTask": "watch"
+            "preLaunchTask": "watch",
+            "env": {
+                "DEBUG": "*"
+            }
         }
     ]
 }

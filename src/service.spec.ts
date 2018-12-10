@@ -2,7 +2,7 @@ import * as test from "blue-tape";
 import { UpdaterService } from "./service";
 import { TestContext } from "./test";
 
-test("instantiate", async t => TestContext.with(({
+test("service", t => TestContext.with(async ({
     steamApiEndpoint,
     circleApiEndpoint,
 }) => {
@@ -13,8 +13,22 @@ test("instantiate", async t => TestContext.with(({
         steamApiKey: "123",
         circleApiEndpoint,
         circleApiUserToken: "456",
-        games: [],
+        games: [
+            {
+                name: "csgo",
+                steamId: 730,
+            },
+        ],
     });
 
-    t.ok(service);
+    let buildCount = 0;
+    service.on("build", name => buildCount++);
+
+    service.start();
+
+    await new Promise(resolve => setTimeout(resolve, 5000));
+
+    t.equal(buildCount, 1);
+
+    service.stop();
 }));

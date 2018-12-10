@@ -1,5 +1,6 @@
 import * as steam from "@gameye/steam-api";
 import { SteamApi } from "@gameye/steam-api";
+import { EventEmitter } from "events";
 import fetch from "node-fetch";
 
 export interface UpdaterServiceGameConfig {
@@ -46,7 +47,7 @@ interface UpdaterServiceGameInfo {
     version: number;
 }
 
-export class UpdaterService {
+export class UpdaterService extends EventEmitter {
 
     //#region errors
 
@@ -59,8 +60,14 @@ export class UpdaterService {
     private intervalHandle?: NodeJS.Timeout;
     private readonly steamApi: steam.SteamApi;
     private readonly gameInfo: { [name: string]: UpdaterServiceGameInfo };
+    private config: UpdaterServiceConfig;
 
-    constructor(private config: UpdaterServiceConfig) {
+    constructor(config: UpdaterServiceConfig) {
+        super();
+
+        config = this.config =
+            this.normalizeConfig(config);
+
         const { steamApiEndpoint, steamApiKey } = config;
         this.steamApi = new SteamApi({
             ApiEndpoint: steamApiEndpoint,
@@ -81,7 +88,24 @@ export class UpdaterService {
         if (this.intervalHandle) throw new AlreadyStartedError();
 
         const { interval } = this.config;
-        this.intervalHandle = setInterval(() => this.step(), interval);
+        let busy = false;
+        this.intervalHandle = setInterval(
+            async () => {
+                if (busy) return;
+
+                busy = true;
+                try {
+                    await this.step();
+                }
+                catch (error) {
+                    this.emit("error", error);
+                }
+                finally {
+                    busy = false;
+                }
+            },
+            interval,
+        );
     }
 
     public stop() {
@@ -99,15 +123,20 @@ export class UpdaterService {
         const { gameInfo } = this;
 
         for (const [name, { steamId, version }] of Object.entries(gameInfo)) {
-            const requiredVersion = await this.getRequiredVersion(steamId, version);
+            try {
+                const requiredVersion = await this.getRequiredVersion(steamId, version);
 
-            if (version === requiredVersion) continue;
+                if (version === requiredVersion) continue;
 
-            gameInfo[name] = { steamId, version: requiredVersion };
+                gameInfo[name] = { steamId, version: requiredVersion };
 
-            if (requiredVersion === 0) continue;
+                if (requiredVersion === 0) continue;
 
-            this.triggerBuild(name);
+                await this.triggerBuild(name);
+            }
+            catch (error) {
+                this.emit("error", error);
+            }
         }
     }
 
@@ -123,9 +152,12 @@ export class UpdaterService {
     }
 
     private async triggerBuild(tag: string) {
+        this.emit("build", tag);
+
         const { circleApiEndpoint, circleApiUserToken } = this.config;
         const url = `${circleApiEndpoint}/project/github/Gameye/steam-images/build?circle-token=${circleApiUserToken}`;
         const response = await fetch(url, {
+            method: "POST",
             body: JSON.stringify({ tag }),
             headers: { "Content-Type": "application/json" },
         });
@@ -133,6 +165,24 @@ export class UpdaterService {
         if (!response.ok) {
             throw new ResponseError(response.status, responseData.message);
         }
+    }
+
+    private normalizeConfig(config: UpdaterServiceConfig): UpdaterServiceConfig {
+        let {
+            circleApiEndpoint,
+            steamApiEndpoint,
+        } = config;
+
+        circleApiEndpoint = circleApiEndpoint.replace(/\/+$/, "");
+        steamApiEndpoint = steamApiEndpoint.replace(/\/+$/, "");
+
+        return {
+            ...config,
+            ...{
+                circleApiEndpoint,
+                steamApiEndpoint,
+            },
+        };
     }
 
 }

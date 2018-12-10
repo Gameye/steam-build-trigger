@@ -28,9 +28,15 @@ export class TestContext {
 
     //#region initialize
 
-    private getSteamApiMock() {
+    private getCircleApiMock() {
         const app = express();
-        app.get("/project/github/Gameye/steam-images/build", (req, res, next) => {
+
+        app.use((req, res, next) => {
+            // place your breakpoint here!
+            next();
+        });
+
+        app.post("/project/github/Gameye/steam-images/build", (req, res, next) => {
             res.send({
                 status: 200,
                 body: "Build created",
@@ -39,8 +45,13 @@ export class TestContext {
         return app;
     }
 
-    private getCircleApiMock() {
+    private getSteamApiMock() {
         const app = express();
+
+        app.use((req, res, next) => {
+            // place your breakpoint here!
+            next();
+        });
 
         app.get("/ISteamApps/UpToDateCheck/v1", (req, res, next) => {
             const { appid, version } = req.query;
@@ -97,8 +108,8 @@ export class TestContext {
         circleApiServer.on("connection", this.onConnection);
         steamApiServer.on("connection", this.onConnection);
         await Promise.all([
-            new Promise(resolve => circleApiServer.listen(8001, resolve)),
-            new Promise(resolve => steamApiServer.listen(8002, resolve)),
+            new Promise(resolve => steamApiServer.listen(8001, resolve)),
+            new Promise(resolve => circleApiServer.listen(8002, resolve)),
         ]);
     }
 

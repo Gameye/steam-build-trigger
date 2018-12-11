@@ -169,16 +169,18 @@ export class UpdaterService extends EventEmitter {
             steamApiEndpoint,
         } = config;
 
-        circleApiEndpoint = circleApiEndpoint.replace(/\/+$/, "");
-        steamApiEndpoint = steamApiEndpoint.replace(/\/+$/, "");
+        circleApiEndpoint = circleApiEndpoint && circleApiEndpoint.replace(/\/+$/, "");
+        steamApiEndpoint = steamApiEndpoint && steamApiEndpoint.replace(/\/+$/, "");
 
-        return {
+        config = {
             ...config,
             ...{
                 circleApiEndpoint,
                 steamApiEndpoint,
             },
         };
+
+        return config;
     }
 
 }

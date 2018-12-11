@@ -1,0 +1,6 @@
+interval: 60000
+game:
+  - name: csgo
+    steamId: 730
+  - name: tf2
+    steamId: 440

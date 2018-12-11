@@ -24,11 +24,11 @@ test("service", t => TestContext.with(async ({
     let buildCount = 0;
     service.on("build", name => buildCount++);
 
-    service.start();
+    await service.start();
 
     await new Promise(resolve => setTimeout(resolve, 5000));
 
     t.equal(buildCount, 1);
 
-    service.stop();
+    await service.stop();
 }));

@@ -3,7 +3,7 @@ version: 2
 jobs:
   prepare-npm:
     docker: &docker_node
-      - image: circleci/node:8
+      - image: circleci/node:10
     steps:
       - checkout
       - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
@@ -18,6 +18,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
+            - .npmrc
             - node_modules
             - node
             - module
@@ -40,17 +41,61 @@ jobs:
       - store_test_results:
           path: /tmp/test-results
 
+  push-image:
+    docker: &docker_buildpack
+      - image: circleci/buildpack-deps
+    steps: &push_image_steps
+      - setup_remote_docker: &setup_remote_docker
+          docker_layer_caching: true
+
+      - checkout
+      - attach_workspace: *attach_workspace
+      
+      - run: >
+          docker login
+          --username $DOCKER_USERNAME
+          --password $DOCKER_PASSWORD
+      - run: >
+          docker build
+          --tag gameye/$CIRCLE_PROJECT_REPONAME:latest
+          --tag gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
+          .
+      - run: docker push gameye/$CIRCLE_PROJECT_REPONAME:latest
+      - run: docker push gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
+
 workflows:
   version: 2
   main:
     jobs:
       - prepare-npm:
           context: npm-authorized
-          filters: &filter_all
+          filters: &filters_all
             tags:
               only: /.*?/
-      - lint: &test_job
-          requires:
-            - prepare-npm
-          filters: *filter_all
-      - spec: *test_job
+
+      - lint:
+          requires: [ prepare-npm ]
+          filters: *filters_all
+      - spec:
+          requires: [ prepare-npm ]
+          filters: *filters_all
+
+      - approve-deploy:
+          type: approval
+          filters: &filters_deploy
+            branches:
+              ignore: /.*?/
+            tags:
+              only:
+                # v1.0.0
+                - /^v\d+\.\d+\.\d+$/
+                # v1.0.0-1 / v1.0.0
+                - /^v\d+\.\d+\.\d+(\-\d+)?$/
+
+      - push-image:
+          context: docker-authorized
+          requires: &requires_push
+            - approve-deploy
+            - spec
+            - lint
+          filters: *filters_deploy

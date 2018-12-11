@@ -20,20 +20,6 @@ export interface UpdaterServiceConfig {
 //#region errors
 
 // tslint:disable:max-classes-per-file
-class AlreadyStoppedError extends Error {
-    constructor() {
-        super("already stopped");
-    }
-}
-
-// tslint:disable:max-classes-per-file
-class AlreadyStartedError extends Error {
-    constructor() {
-        super("already started");
-    }
-}
-
-// tslint:disable:max-classes-per-file
 class ResponseError extends Error {
     constructor(public code: number, message: string) {
         super(message);
@@ -51,16 +37,15 @@ export class UpdaterService extends EventEmitter {
 
     //#region errors
 
-    public static AlreadyStoppedError = AlreadyStoppedError;
-    public static AlreadyStartedError = AlreadyStartedError;
     public static ResponseError = ResponseError;
 
     //#endregion
 
-    private intervalHandle?: NodeJS.Timeout;
+    private promise?: Promise<void>;
+    private timeoutHandle?: NodeJS.Timeout;
     private readonly steamApi: steam.SteamApi;
     private readonly gameInfo: { [name: string]: UpdaterServiceGameInfo };
-    private config: UpdaterServiceConfig;
+    private readonly config: UpdaterServiceConfig;
 
     constructor(config: UpdaterServiceConfig) {
         super();
@@ -84,35 +69,17 @@ export class UpdaterService extends EventEmitter {
         );
     }
 
-    public start() {
-        if (this.intervalHandle) throw new AlreadyStartedError();
-
-        const { interval } = this.config;
-        let busy = false;
-        this.intervalHandle = setInterval(
-            async () => {
-                if (busy) return;
-
-                busy = true;
-                try {
-                    await this.step();
-                }
-                catch (error) {
-                    this.emit("error", error);
-                }
-                finally {
-                    busy = false;
-                }
-            },
-            interval,
-        );
+    public async start() {
+        await this.cycle();
+        this.emit("started");
     }
 
-    public stop() {
-        if (!this.intervalHandle) throw new AlreadyStoppedError();
+    public async stop() {
+        if (this.timeoutHandle) clearTimeout(this.timeoutHandle);
+        this.timeoutHandle = undefined;
 
-        clearInterval(this.intervalHandle);
-        this.intervalHandle = undefined;
+        if (this.promise) await this.promise;
+        this.emit("stopped");
     }
 
     private async step() {
@@ -135,6 +102,13 @@ export class UpdaterService extends EventEmitter {
             }
         }
     }
+
+    private cycle = () => this.promise = this.step().
+        catch(error => this.emit("error", error)).
+        then(() => {
+            const { interval } = this.config;
+            this.timeoutHandle = setTimeout(this.cycle, interval);
+        })
 
     private async getRequiredVersion(steamId: number, version: number) {
         const { steamApi } = this;

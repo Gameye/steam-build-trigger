@@ -13,4 +13,4 @@ COPY package-lock.json package-lock.json
 RUN npm install --production --quiet
 RUN rm .npmrc
 
-CMD [ "node", "node/cli" ]
+CMD [ "node", "node/program" ]

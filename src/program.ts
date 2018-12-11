@@ -38,7 +38,10 @@ async function main(arg: string[]) {
     }
 
     const service = new UpdaterService(config);
-    service.on("build", name => console.log(name));
+    service.on("started", () => console.log("started"));
+    service.on("stopped", () => console.log("stopped"));
+    service.on("build", name => console.log(`build ${name}`));
+    service.on("error", error => console.error(error));
 
     service.start();
     process.addListener("SIGINT", end);

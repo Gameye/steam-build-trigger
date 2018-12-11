@@ -2,6 +2,7 @@ import * as steam from "@gameye/steam-api";
 import { SteamApi } from "@gameye/steam-api";
 import { EventEmitter } from "events";
 import fetch from "node-fetch";
+import * as querystring from "querystring";
 
 export interface UpdaterServiceGameConfig {
     name: string;
@@ -125,7 +126,10 @@ export class UpdaterService extends EventEmitter {
         this.emit("build", tag);
 
         const { circleApiEndpoint, circleApiUserToken } = this.config;
-        const url = `${circleApiEndpoint}/project/github/Gameye/steam-images/build?circle-token=${circleApiUserToken}`;
+        const query = querystring.stringify({
+            "circle-token": circleApiUserToken,
+        });
+        const url = `${circleApiEndpoint}/project/github/Gameye/steam-images/build?${query}`;
         const response = await fetch(url, {
             method: "POST",
             body: JSON.stringify({ tag }),

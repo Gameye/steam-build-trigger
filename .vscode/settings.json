@@ -2,7 +2,6 @@
 {
     "typescript.tsdk": "node_modules/typescript/lib",
     "editor.formatOnSave": true,
-    "tslint.autoFixOnSave": true,
     "editor.rulers": [
         80,
         120

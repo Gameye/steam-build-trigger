@@ -63,6 +63,37 @@ jobs:
       - run: docker push gameye/$CIRCLE_PROJECT_REPONAME:latest
       - run: docker push gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
 
+  update-cluster-internal:
+    environment:
+      CLUSTER: fb1e6d14-4d82-4ac1-8358-eb69dcae319d #internal-world
+      DIGITALOCEAN_ENABLE_BETA: 1
+    docker: *docker_buildpack
+    steps: &update_cluster_steps
+      - run: >
+          sudo apt-get update && sudo apt-get install -y apt-transport-https
+          curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+          echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list
+          sudo apt-get update
+          sudo apt-get install -y kubectl
+      - run: >
+          curl
+          https://github.com/digitalocean/doctl/releases/download/v1.12.2/doctl-1.12.2-linux-amd64.tar.gz |
+          sudo tar --extract --directory /usr/local/bin/
+      - run: >
+          doctl kubernetes cluster kubeconfig save fb1e6d14-4d82-4ac1-8358-eb69dcae319d
+      
+      - checkout
+      - attach_workspace: *attach_workspace
+      
+      - run: >
+          kubectl
+          --filename .kube/deploy.yml
+          apply
+
+      - run: >
+          kubectl
+          set image deployment/$CIRCLE_PROJECT_REPONAME $CIRCLE_PROJECT_REPONAME=gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
+
 workflows:
   version: 2
   main:
@@ -98,4 +129,9 @@ workflows:
             - approve-deploy
             - spec
             - lint
+          filters: *filters_deploy
+
+      - update-cluster-internal:
+          context: do-authorized
+          requires: [ push-image ]
           filters: *filters_deploy

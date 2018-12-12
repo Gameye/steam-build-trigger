@@ -80,21 +80,20 @@ jobs:
           --location
           https://github.com/digitalocean/doctl/releases/download/v1.12.2/doctl-1.12.2-linux-amd64.tar.gz |
           sudo tar --extract --gzip --directory /usr/local/bin/
+      - run: mkdir ~/.kube
       - run: >
-          doctl kubernetes cluster kubeconfig show fb1e6d14-4d82-4ac1-8358-eb69dcae319d > .kube/config.yml
+          doctl kubernetes cluster kubeconfig show fb1e6d14-4d82-4ac1-8358-eb69dcae319d > ~/.kube/config.yml
       
       - checkout
       - attach_workspace: *attach_workspace
       
       - run: >
           kubectl
-          --kubeconfig .kube/config.yml
           --filename .kube/deploy.yml
           apply
 
       - run: >
           kubectl
-          --kubeconfig .kube/config.yml
           set image deployment/$CIRCLE_PROJECT_REPONAME $CIRCLE_PROJECT_REPONAME=gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
 
 workflows:

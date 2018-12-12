@@ -141,7 +141,6 @@ export class UpdaterService extends EventEmitter {
 
         const url = `${circleApiEndpoint}/project/github/Gameye/steam-images/build?${query}`;
 
-        this.log("fetch", { url });
         const response = await fetch(url, {
             method: "POST",
             body: JSON.stringify({ tag }),

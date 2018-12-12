@@ -45,10 +45,12 @@ async function main(arg: string[]) {
 
     service.start();
     process.addListener("SIGINT", end);
+    process.addListener("SIGTERM", end);
 
-    function end() {
+    async function end() {
         process.removeListener("SIGINT", end);
-        service.stop();
+        process.removeListener("SIGTERM", end);
+        await service.stop();
     }
 
 }

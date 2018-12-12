@@ -3,6 +3,7 @@ import { SteamApi } from "@gameye/steam-api";
 import { EventEmitter } from "events";
 import fetch from "node-fetch";
 import * as querystring from "querystring";
+import { createLogger } from "./log";
 
 export interface UpdaterServiceGameConfig {
     name: string;
@@ -42,6 +43,8 @@ export class UpdaterService extends EventEmitter {
 
     //#endregion
 
+    private log = createLogger(this);
+
     private promise?: Promise<void>;
     private timeoutHandle?: NodeJS.Timeout;
     private readonly steamApi: steam.SteamApi;
@@ -71,11 +74,15 @@ export class UpdaterService extends EventEmitter {
     }
 
     public async start() {
+        this.log("start");
+
         await this.cycle();
         this.emit("started");
     }
 
     public async stop() {
+        this.log("stop");
+
         if (this.timeoutHandle) clearTimeout(this.timeoutHandle);
         this.timeoutHandle = undefined;
 
@@ -84,6 +91,8 @@ export class UpdaterService extends EventEmitter {
     }
 
     private async step() {
+        this.log("step");
+
         const { gameInfo } = this;
 
         for (const [name, { steamId, version }] of Object.entries(gameInfo)) {
@@ -129,7 +138,10 @@ export class UpdaterService extends EventEmitter {
         const query = querystring.stringify({
             "circle-token": circleApiUserToken,
         });
+
         const url = `${circleApiEndpoint}/project/github/Gameye/steam-images/build?${query}`;
+
+        this.log("fetch", { url });
         const response = await fetch(url, {
             method: "POST",
             body: JSON.stringify({ tag }),

@@ -197,16 +197,19 @@ export class UpdaterService extends EventEmitter {
         let {
             circleApiEndpoint,
             steamApiEndpoint,
+            ociPackageEndpoint,
         } = config;
 
         circleApiEndpoint = circleApiEndpoint && circleApiEndpoint.replace(/\/+$/, "");
         steamApiEndpoint = steamApiEndpoint && steamApiEndpoint.replace(/\/+$/, "");
+        ociPackageEndpoint = ociPackageEndpoint && ociPackageEndpoint.replace(/\/+$/, "");
 
         config = {
             ...config,
             ...{
                 circleApiEndpoint,
                 steamApiEndpoint,
+                ociPackageEndpoint,
             },
         };
 

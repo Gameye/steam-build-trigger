@@ -16,7 +16,7 @@ async function main(arg: string[]) {
         steamApiKey: env.STEAM_API_KEY || "",
         circleApiEndpoint: env.CIRCLE_API_ENDPOINT || "https://circleci.com/api/v1.1",
         circleApiUserToken: env.CIRCLE_API_USER_TOKEN || "",
-        ociPackageEndpoint: env.OCI_PACKAGE_ENDPOINT || "https://static.gameye.org/packages/oci/csgo/latest",
+        ociPackageEndpoint: env.OCI_PACKAGE_ENDPOINT || "https://static.gameye.org/packages/oci",
         interval: 60 * 1000,
         games: [],
     } as UpdaterServiceConfig;

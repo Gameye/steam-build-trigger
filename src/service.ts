@@ -16,12 +16,20 @@ export interface UpdaterServiceConfig {
     steamApiKey: string;
     circleApiEndpoint: string;
     circleApiUserToken: string;
+    ociPackageEndpoint: string;
     games: UpdaterServiceGameConfig[];
 }
 
 //#region errors
 
 // tslint:disable:max-classes-per-file
+
+class InvalidLatestVersionFormat extends Error {
+    constructor(public latest: string) {
+        super(`invalid latest version format '${latest}'`);
+    }
+}
+
 class ResponseError extends Error {
     constructor(public code: number, message: string) {
         super(message);
@@ -39,6 +47,7 @@ export class UpdaterService extends EventEmitter {
 
     //#region errors
 
+    public static InvalidLatestVersionFormat = InvalidLatestVersionFormat;
     public static ResponseError = ResponseError;
 
     //#endregion
@@ -75,6 +84,19 @@ export class UpdaterService extends EventEmitter {
 
     public async start() {
         this.log("start");
+
+        const { gameInfo } = this;
+
+        for (const [name, { steamId, version }] of Object.entries(gameInfo)) {
+            try {
+                const latestVersion = await this.getLatestVersion(name);
+
+                gameInfo[name] = { steamId, version: latestVersion };
+            }
+            catch (error) {
+                this.emit("error", error);
+            }
+        }
 
         await this.cycle();
         this.emit("started");
@@ -129,6 +151,25 @@ export class UpdaterService extends EventEmitter {
         const requiredVersion = response.required_version;
 
         return requiredVersion as number;
+    }
+
+    private async getLatestVersion(name: string) {
+        const { ociPackageEndpoint } = this.config;
+
+        const url = `${ociPackageEndpoint}/${name}/latest`;
+
+        const response = await fetch(url);
+        const responseData = await response.text();
+        if (!response.ok) {
+            throw new ResponseError(response.status, response.statusText);
+        }
+        const match = (/^(.*)_(.*)_\d+$/).exec(responseData);
+        if (!match) return 0;
+
+        const [, latestName, latestVersion] = match;
+        if (latestName !== name) throw new InvalidLatestVersionFormat(match[1]);
+
+        return Number(latestVersion.replace(/\D+/g, ""));
     }
 
     private async triggerBuild(tag: string) {

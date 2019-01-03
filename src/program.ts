@@ -45,12 +45,13 @@ async function main(arg: string[]) {
     service.on("error", error => console.error(error));
 
     service.start();
-    process.addListener("SIGINT", end);
-    process.addListener("SIGTERM", end);
+    const signals: NodeJS.Signals[] = [
+        "SIGINT", "SIGTERM",
+    ];
+    signals.forEach(signal => process.addListener(signal, end));
 
     async function end() {
-        process.removeListener("SIGINT", end);
-        process.removeListener("SIGTERM", end);
+        signals.forEach(signal => process.removeListener(signal, end));
         await service.stop();
     }
 

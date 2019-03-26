@@ -1,8 +1,8 @@
 import * as fs from "fs";
 import * as yaml from "js-yaml";
 import * as path from "path";
-import { projectRoot } from "./root";
 import { UpdaterService, UpdaterServiceConfig } from "./service";
+import { projectRoot, waitForSignal } from "./utils";
 
 main(process.argv.slice(2));
 
@@ -44,14 +44,11 @@ async function main(arg: string[]) {
     service.on("build", name => console.log(`build ${name}`));
     service.on("error", error => console.error(error));
 
-    service.start();
-    const signals: NodeJS.Signals[] = [
-        "SIGINT", "SIGTERM",
-    ];
-    signals.forEach(signal => process.addListener(signal, end));
-
-    async function end() {
-        signals.forEach(signal => process.removeListener(signal, end));
+    try {
+        await service.start();
+        await waitForSignal("SIGINT", "SIGTERM");
+    }
+    finally {
         await service.stop();
     }
 

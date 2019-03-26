@@ -3,7 +3,7 @@ import { SteamApi } from "@gameye/steam-api";
 import { EventEmitter } from "events";
 import fetch from "node-fetch";
 import * as querystring from "querystring";
-import { createLogger } from "./log";
+import { createLogger } from "./utils/log";
 
 export interface UpdaterServiceGameConfig {
     name: string;

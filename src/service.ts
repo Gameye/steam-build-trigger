@@ -16,7 +16,6 @@ export interface UpdaterServiceConfig {
     steamApiKey: string;
     circleApiEndpoint: string;
     circleApiUserToken: string;
-    // ociPackageEndpoint: string;
     games: UpdaterServiceGameConfig[];
 }
 
@@ -136,25 +135,6 @@ export class UpdaterService extends EventEmitter {
         return requiredVersion as number;
     }
 
-    // private async getLatestVersion(name: string) {
-    //     const { ociPackageEndpoint } = this.config;
-
-    //     const url = `${ociPackageEndpoint}/${name}/latest`;
-
-    //     const response = await fetch(url);
-    //     const responseData = await response.text();
-    //     if (!response.ok) {
-    //         throw new ResponseError(response.status, response.statusText);
-    //     }
-    //     const match = (/^(.*)_(.*)_\d+$/).exec(responseData);
-    //     if (!match) return 0;
-
-    //     const [, latestName, latestVersion] = match;
-    //     if (latestName !== name) throw new InvalidLatestVersionFormat(match[1]);
-
-    //     return Number(latestVersion.replace(/\D+/g, ""));
-    // }
-
     private async triggerBuild(repo: string) {
         this.emit("build", repo);
 
@@ -186,19 +166,16 @@ export class UpdaterService extends EventEmitter {
         let {
             circleApiEndpoint,
             steamApiEndpoint,
-            // ociPackageEndpoint,
         } = config;
 
         circleApiEndpoint = circleApiEndpoint && circleApiEndpoint.replace(/\/+$/, "");
         steamApiEndpoint = steamApiEndpoint && steamApiEndpoint.replace(/\/+$/, "");
-        // ociPackageEndpoint = ociPackageEndpoint && ociPackageEndpoint.replace(/\/+$/, "");
 
         config = {
             ...config,
             ...{
                 circleApiEndpoint,
                 steamApiEndpoint,
-                // ociPackageEndpoint,
             },
         };
 

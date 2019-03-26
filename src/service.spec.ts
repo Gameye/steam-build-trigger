@@ -5,7 +5,6 @@ import { TestContext } from "./test";
 test("service one build", t => TestContext.with(async ({
     steamApiEndpoint,
     circleApiEndpoint,
-    // ociPackageEndpoint,
 }) => {
     const service = new UpdaterService({
         interval: 1000,
@@ -13,7 +12,6 @@ test("service one build", t => TestContext.with(async ({
         steamApiKey: "123",
         circleApiEndpoint,
         circleApiUserToken: "456",
-        // ociPackageEndpoint,
         games: [
             {
                 name: "tf2",
@@ -38,7 +36,6 @@ test("service one build", t => TestContext.with(async ({
 test("service no build", t => TestContext.with(async ({
     steamApiEndpoint,
     circleApiEndpoint,
-    // ociPackageEndpoint,
 }) => {
     const service = new UpdaterService({
         interval: 1000,
@@ -46,7 +43,6 @@ test("service no build", t => TestContext.with(async ({
         steamApiKey: "123",
         circleApiEndpoint,
         circleApiUserToken: "456",
-        // ociPackageEndpoint,
         games: [
             {
                 name: "csgo",

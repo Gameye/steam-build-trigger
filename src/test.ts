@@ -17,11 +17,9 @@ export class TestContext {
 
     public readonly steamApiServer = http.createServer(this.getSteamApiMock());
     public readonly circleApiServer = http.createServer(this.getCircleApiMock());
-    // public readonly ociPackageServer = http.createServer(this.getOciPackageMock());
 
     public readonly steamApiEndpoint = "http://localhost:8001";
     public readonly circleApiEndpoint = "http://localhost:8002";
-    // public readonly ociPackageEndpoint = "http://localhost:8003";
 
     private readonly socketSet = new Set<net.Socket>();
 
@@ -151,24 +149,6 @@ export class TestContext {
         return app;
     }
 
-    // private getOciPackageMock() {
-    //     const app = express();
-
-    //     app.use((req, res, next) => {
-    //         // place your breakpoint here!
-    //         next();
-    //     });
-
-    //     app.get("/csgo/latest", (req, res, next) => {
-    //         res.send("csgo_1.36.6.6_1544625536");
-    //     });
-    //     app.get("/tf2/latest", (req, res, next) => {
-    //         res.send("tf2_4783667_1544624641");
-    //     });
-
-    //     return app;
-    // }
-
     //#endregion
 
     //#region setup / teardown
@@ -177,11 +157,9 @@ export class TestContext {
         const { circleApiServer, steamApiServer } = this;
         circleApiServer.on("connection", this.onConnection);
         steamApiServer.on("connection", this.onConnection);
-        // ociPackageServer.on("connection", this.onConnection);
         await Promise.all([
             new Promise(resolve => steamApiServer.listen(8001, resolve)),
             new Promise(resolve => circleApiServer.listen(8002, resolve)),
-            // new Promise(resolve => ociPackageServer.listen(8003, resolve)),
         ]);
     }
 
@@ -191,7 +169,6 @@ export class TestContext {
         await Promise.all([
             new Promise(resolve => circleApiServer.close(resolve)),
             new Promise(resolve => steamApiServer.close(resolve)),
-            // new Promise(resolve => ociPackageServer.close(resolve)),
         ]);
     }
 

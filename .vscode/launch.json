@@ -26,7 +26,10 @@
             "request": "launch",
             "name": "run program",
             "program": "${workspaceRoot}/src/program.ts",
-            "args": [],
+            "args": [
+                "run",
+                "config/staging.yaml"
+            ],
             "cwd": "${workspaceRoot}",
             "sourceMaps": true,
             "outFiles": [

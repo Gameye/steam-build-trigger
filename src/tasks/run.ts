@@ -7,13 +7,13 @@ import { waitForSignal } from "../utils";
 const { env } = process;
 
 program.
-    command("run").
+    command("run <config>").
     option("--steam--api--endpoint <url>", "", String, env.STEAM_API_ENDPOINT || "http://api.steampowered.com").
     option("--steam--api--key <string>", "", String, env.STEAM_API_KEY).
     option("--circle--api--endpoint <url>", "", String, env.CIRCLE_API_ENDPOINT || "https://circleci.com/api/v1.1").
     option("--circle-api-user-token <string>", "", String, env.CIRCLE_API_USER_TOKEN).
     option("--interval <msec>", "", Number, 60 * 1000).
-    option("--game-config-file <path>", "", String).
+    option("--sentry-dsn [string]", "", String, env.SENTRY_DSN).
     action(runTask);
 
 interface RunTaskConfig {
@@ -22,17 +22,18 @@ interface RunTaskConfig {
     circleApiEndpoint: string;
     circleApiUserToken: string;
     interval: number;
-    gameConfigFile: string;
 }
 
-async function runTask({
-    steamApiEndpoint,
-    steamApiKey,
-    circleApiEndpoint,
-    circleApiUserToken,
-    interval,
-    gameConfigFile,
-}: RunTaskConfig) {
+async function runTask(
+    configFile: string,
+    {
+        steamApiEndpoint,
+        steamApiKey,
+        circleApiEndpoint,
+        circleApiUserToken,
+        interval,
+    }: RunTaskConfig
+) {
     // tslint:disable no-console
 
     const config: UpdaterServiceConfig = {
@@ -44,10 +45,10 @@ async function runTask({
         games: [],
     };
 
-    if (gameConfigFile) {
-        const gameConfigData = fs.readFileSync(gameConfigFile, "utf8");
-        const gameConfig = yaml.load(gameConfigData);
-        config.games = gameConfig.games;
+    if (configFile) {
+        const configData = fs.readFileSync(configFile, "utf8");
+        const configObject = yaml.load(configData);
+        config.games = configObject.games;
     }
 
     const service = new UpdaterService(config);

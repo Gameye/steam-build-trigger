@@ -16,7 +16,7 @@ export interface UpdaterServiceConfig {
     steamApiKey: string;
     circleApiEndpoint: string;
     circleApiUserToken: string;
-    ociPackageEndpoint: string;
+    // ociPackageEndpoint: string;
     games: UpdaterServiceGameConfig[];
 }
 
@@ -87,9 +87,10 @@ export class UpdaterService extends EventEmitter {
 
         const { gameInfo } = this;
 
-        for (const [name, { steamId, version }] of Object.entries(gameInfo)) {
+        for (const [name, { steamId }] of Object.entries(gameInfo)) {
             try {
-                const latestVersion = await this.getLatestVersion(name);
+                // const latestVersion = await this.getLatestVersion(name);
+                const latestVersion = await this.getRequiredVersion(steamId, 0);
 
                 gameInfo[name] = { steamId, version: latestVersion };
             }
@@ -153,24 +154,24 @@ export class UpdaterService extends EventEmitter {
         return requiredVersion as number;
     }
 
-    private async getLatestVersion(name: string) {
-        const { ociPackageEndpoint } = this.config;
+    // private async getLatestVersion(name: string) {
+    //     const { ociPackageEndpoint } = this.config;
 
-        const url = `${ociPackageEndpoint}/${name}/latest`;
+    //     const url = `${ociPackageEndpoint}/${name}/latest`;
 
-        const response = await fetch(url);
-        const responseData = await response.text();
-        if (!response.ok) {
-            throw new ResponseError(response.status, response.statusText);
-        }
-        const match = (/^(.*)_(.*)_\d+$/).exec(responseData);
-        if (!match) return 0;
+    //     const response = await fetch(url);
+    //     const responseData = await response.text();
+    //     if (!response.ok) {
+    //         throw new ResponseError(response.status, response.statusText);
+    //     }
+    //     const match = (/^(.*)_(.*)_\d+$/).exec(responseData);
+    //     if (!match) return 0;
 
-        const [, latestName, latestVersion] = match;
-        if (latestName !== name) throw new InvalidLatestVersionFormat(match[1]);
+    //     const [, latestName, latestVersion] = match;
+    //     if (latestName !== name) throw new InvalidLatestVersionFormat(match[1]);
 
-        return Number(latestVersion.replace(/\D+/g, ""));
-    }
+    //     return Number(latestVersion.replace(/\D+/g, ""));
+    // }
 
     private async triggerBuild(tag: string) {
         this.emit("build", tag);
@@ -197,19 +198,19 @@ export class UpdaterService extends EventEmitter {
         let {
             circleApiEndpoint,
             steamApiEndpoint,
-            ociPackageEndpoint,
+            // ociPackageEndpoint,
         } = config;
 
         circleApiEndpoint = circleApiEndpoint && circleApiEndpoint.replace(/\/+$/, "");
         steamApiEndpoint = steamApiEndpoint && steamApiEndpoint.replace(/\/+$/, "");
-        ociPackageEndpoint = ociPackageEndpoint && ociPackageEndpoint.replace(/\/+$/, "");
+        // ociPackageEndpoint = ociPackageEndpoint && ociPackageEndpoint.replace(/\/+$/, "");
 
         config = {
             ...config,
             ...{
                 circleApiEndpoint,
                 steamApiEndpoint,
-                ociPackageEndpoint,
+                // ociPackageEndpoint,
             },
         };
 

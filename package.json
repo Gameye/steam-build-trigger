@@ -1,6 +1,5 @@
 {
-  "name": "@gameye/steam-distribution-updater",
-  "version": "0.0.1-15",
+  "name": "@gameye/steam-build-trigger",
   "description": "",
   "main": "./node/main.js",
   "module": "./module/main.js",

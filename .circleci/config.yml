@@ -7,6 +7,7 @@ jobs:
     steps:
       - checkout
       - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
+      - run: npm version $CIRCLE_TAG
       - restore_cache:
           key: npm-
       - run: npm install
@@ -16,7 +17,7 @@ jobs:
           paths: [ ~/.npm ]
       - persist_to_workspace:
           root: .
-          paths: [ .npmrc, node_modules, node, module, types ]
+          paths: [ package.json, package-lock.json, node_modules, node, module, types ]
 
   lint:
     docker: *docker_node
@@ -67,7 +68,6 @@ jobs:
           --password $DOCKER_PASSWORD
       - run: >
           docker build
-          --build-arg VERSION=$CIRCLE_TAG
           --tag gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
           .
       - run: docker push gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG

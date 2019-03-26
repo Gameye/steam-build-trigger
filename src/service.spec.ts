@@ -18,6 +18,7 @@ test("service one build", t => TestContext.with(async ({
             {
                 name: "tf2",
                 steamId: 440,
+                repos: ["tf2"],
             },
         ],
     });
@@ -50,6 +51,7 @@ test("service no build", t => TestContext.with(async ({
             {
                 name: "csgo",
                 steamId: 730,
+                repos: ["csgo"],
             },
         ],
     });

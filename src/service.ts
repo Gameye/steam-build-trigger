@@ -3,11 +3,11 @@ import { SteamApi } from "@gameye/steam-api";
 import { EventEmitter } from "events";
 import fetch from "node-fetch";
 import * as querystring from "querystring";
-import { createLogger } from "./utils/log";
 
 export interface UpdaterServiceGameConfig {
     name: string;
     steamId: number;
+    repos: string[];
 }
 
 export interface UpdaterServiceConfig {
@@ -38,11 +38,6 @@ class ResponseError extends Error {
 
 //#endregion
 
-interface UpdaterServiceGameInfo {
-    steamId: number;
-    version: number;
-}
-
 export class UpdaterService extends EventEmitter {
 
     //#region errors
@@ -52,12 +47,10 @@ export class UpdaterService extends EventEmitter {
 
     //#endregion
 
-    private log = createLogger(this);
-
     private promise?: Promise<void>;
     private timeoutHandle?: NodeJS.Timeout;
     private readonly steamApi: steam.SteamApi;
-    private readonly gameInfo: { [name: string]: UpdaterServiceGameInfo };
+    private readonly versionMap: { [name: string]: number };
     private readonly config: UpdaterServiceConfig;
 
     constructor(config: UpdaterServiceConfig) {
@@ -71,32 +64,21 @@ export class UpdaterService extends EventEmitter {
             ApiEndpoint: steamApiEndpoint,
             ApiKey: steamApiKey,
         });
-        this.gameInfo = config.games.reduce(
-            (o, { name, steamId }) => Object.assign(o, {
-                [name]: {
-                    steamId,
-                    version: 0,
-                } as UpdaterServiceGameInfo,
+        this.versionMap = config.games.reduce(
+            (o, { name }) => Object.assign(o, {
+                [name]: 0,
             }),
             {},
         );
     }
 
     public async start() {
-        this.log("start");
+        const { versionMap, config } = this;
 
-        const { gameInfo } = this;
+        for (const { name, steamId } of config.games) {
+            const latestVersion = await this.getRequiredVersion(steamId, 0);
 
-        for (const [name, { steamId }] of Object.entries(gameInfo)) {
-            try {
-                // const latestVersion = await this.getLatestVersion(name);
-                const latestVersion = await this.getRequiredVersion(steamId, 0);
-
-                gameInfo[name] = { steamId, version: latestVersion };
-            }
-            catch (error) {
-                this.emit("error", error);
-            }
+            versionMap[name] = latestVersion;
         }
 
         await this.cycle();
@@ -104,8 +86,6 @@ export class UpdaterService extends EventEmitter {
     }
 
     public async stop() {
-        this.log("stop");
-
         if (this.timeoutHandle) clearTimeout(this.timeoutHandle);
         this.timeoutHandle = undefined;
 
@@ -114,26 +94,28 @@ export class UpdaterService extends EventEmitter {
     }
 
     private async step() {
-        this.log("step");
+        const { versionMap, config } = this;
 
-        const { gameInfo } = this;
-
-        for (const [name, { steamId, version }] of Object.entries(gameInfo)) {
+        for (const { name, steamId, repos } of config.games) {
             try {
+                const version = versionMap[name];
                 const requiredVersion = await this.getRequiredVersion(steamId, version);
 
                 if (version === requiredVersion) continue;
 
-                gameInfo[name] = { steamId, version: requiredVersion };
+                versionMap[name] = requiredVersion;
 
                 if (requiredVersion === 0) continue;
 
-                await this.triggerBuild(name);
+                await Promise.all(
+                    repos.map(repo => this.triggerBuild(repo)),
+                );
             }
             catch (error) {
                 this.emit("error", error);
             }
         }
+
     }
 
     private cycle = () => this.promise = this.step().
@@ -173,25 +155,31 @@ export class UpdaterService extends EventEmitter {
     //     return Number(latestVersion.replace(/\D+/g, ""));
     // }
 
-    private async triggerBuild(tag: string) {
-        this.emit("build", tag);
+    private async triggerBuild(repo: string) {
+        this.emit("build", repo);
 
-        const { circleApiEndpoint, circleApiUserToken } = this.config;
-        const query = querystring.stringify({
-            "circle-token": circleApiUserToken,
-        });
+        try {
+            const { circleApiEndpoint, circleApiUserToken } = this.config;
+            const query = querystring.stringify({
+                "circle-token": circleApiUserToken,
+            });
 
-        const url = `${circleApiEndpoint}/project/github/Gameye/steam-images/build?${query}`;
+            const url = `${circleApiEndpoint}/project/github/Gameye/${repo}/build?${query}`;
 
-        const response = await fetch(url, {
-            method: "POST",
-            body: JSON.stringify({ tag }),
-            headers: { "Content-Type": "application/json" },
-        });
-        const responseData = await response.json();
-        if (!response.ok) {
-            throw new ResponseError(response.status, responseData.message);
+            const response = await fetch(url, {
+                method: "POST",
+                body: JSON.stringify({ branch: "master" }),
+                headers: { "Content-Type": "application/json" },
+            });
+            const responseData = await response.json();
+            if (!response.ok) {
+                throw new ResponseError(response.status, responseData.message);
+            }
         }
+        catch (error) {
+            this.emit("error", error);
+        }
+
     }
 
     private normalizeConfig(config: UpdaterServiceConfig): UpdaterServiceConfig {

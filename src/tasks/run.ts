@@ -9,12 +9,32 @@ const { env } = process;
 
 program.
     command("run <config>").
-    option("--steam-api-endpoint <url>", "", String, env.STEAM_API_ENDPOINT || "http://api.steampowered.com").
-    option("--steam-api-key <string>", "", String, env.STEAM_API_KEY).
-    option("--circle-api-endpoint <url>", "", String, env.CIRCLE_API_ENDPOINT || "https://circleci.com/api/v1.1").
-    option("--circle-api-user-token <string>", "", String, env.CIRCLE_API_USER_TOKEN).
-    option("--interval <msec>", "", Number, 60 * 1000).
-    option("--sentry-dsn [string]", "", String, env.SENTRY_DSN).
+    option(
+        "--steam-api-endpoint <url>",
+        "Steam API url",
+        String,
+        env.STEAM_API_ENDPOINT || "http://api.steampowered.com",
+    ).
+    option(
+        "--steam-api-key <string>",
+        "Your Steam API Key",
+        String,
+        env.STEAM_API_KEY,
+    ).
+    option(
+        "--circle-api-endpoint <url>",
+        "Endpoint of the CircleCI API",
+        String,
+        env.CIRCLE_API_ENDPOINT || "https://circleci.com/api/v1.1",
+    ).
+    option(
+        "--circle-api-user-token <string>",
+        "Your CircleCI API user token for triggering builds",
+        String,
+        env.CIRCLE_API_USER_TOKEN,
+    ).
+    option("--interval <msec>", "Polling interval in milliseconds", Number, 60 * 1000).
+    option("--sentry-dsn [string]", "Public DSN for Sentry", String, env.SENTRY_DSN).
     action(runTask);
 
 interface RunTaskConfig {

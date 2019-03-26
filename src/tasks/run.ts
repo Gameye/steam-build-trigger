@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/node";
 import * as program from "commander";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
@@ -22,6 +23,7 @@ interface RunTaskConfig {
     circleApiEndpoint: string;
     circleApiUserToken: string;
     interval: number;
+    sentryDsn?: string;
 }
 
 async function runTask(
@@ -32,9 +34,13 @@ async function runTask(
         circleApiEndpoint,
         circleApiUserToken,
         interval,
-    }: RunTaskConfig
+        sentryDsn: sentryDSN,
+    }: RunTaskConfig,
 ) {
     // tslint:disable no-console
+    if (sentryDSN) {
+        Sentry.init({ dsn: sentryDSN });
+    }
 
     const config: UpdaterServiceConfig = {
         steamApiEndpoint,
@@ -56,6 +62,7 @@ async function runTask(
     service.on("stopped", () => console.log("stopped"));
     service.on("build", name => console.log(`build ${name}`));
     service.on("error", error => console.error(error));
+    service.on("error", error => Sentry.captureException(error));
 
     try {
         await service.start();

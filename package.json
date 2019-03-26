@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@gameye/steam-api": "^1.0.0",
+    "@sentry/node": "^4.6.5",
     "@types/debug": "0.0.31",
     "@types/express": "^4.16.1",
     "@types/js-yaml": "^3.12.0",

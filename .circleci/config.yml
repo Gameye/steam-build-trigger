@@ -13,16 +13,10 @@ jobs:
       - run: npm install tap-junit
       - save_cache:
           key: npm-{{ .Revision }}
-          paths:
-            - ~/.npm
+          paths: [ ~/.npm ]
       - persist_to_workspace:
           root: .
-          paths:
-            - .npmrc
-            - node_modules
-            - node
-            - module
-            - types
+          paths: [ .npmrc, node_modules, node, module, types ]
 
   lint:
     docker: *docker_node
@@ -41,16 +35,14 @@ jobs:
       - store_test_results:
           path: /tmp/test-results
 
-  push-image:
+  push-image-latest:
     docker: &docker_buildpack
       - image: circleci/buildpack-deps
     steps: &push_image_steps
       - setup_remote_docker: &setup_remote_docker
           docker_layer_caching: true
-
       - checkout
       - attach_workspace: *attach_workspace
-      
       - run: >
           docker login
           --username $DOCKER_USERNAME
@@ -58,45 +50,66 @@ jobs:
       - run: >
           docker build
           --tag gameye/$CIRCLE_PROJECT_REPONAME:latest
-          --tag gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
           .
       - run: docker push gameye/$CIRCLE_PROJECT_REPONAME:latest
+
+  push-image:
+    docker: &docker_buildpack
+      - image: circleci/buildpack-deps
+    steps: &push_image_steps
+      - setup_remote_docker: &setup_remote_docker
+          docker_layer_caching: true
+      - checkout
+      - attach_workspace: *attach_workspace
+      - run: >
+          docker login
+          --username $DOCKER_USERNAME
+          --password $DOCKER_PASSWORD
+      - run: >
+          docker build
+          --build-arg VERSION=$CIRCLE_TAG
+          --tag gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
+          .
       - run: docker push gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
 
-  update-cluster-internal:
+  update-cluster-region-internal:
     environment:
-      CLUSTER: fb1e6d14-4d82-4ac1-8358-eb69dcae319d #internal-world
-      DIGITALOCEAN_ENABLE_BETA: 1
-    docker: *docker_buildpack
+      AWS_DEFAULT_REGION: eu-west-1
+      CLUSTER: region-internal
+    docker: &docker_python
+      - image: circleci/python:2.7
     steps: &update_cluster_steps
-      - run: sudo apt-get update
-      - run: sudo apt-get install -y apt-transport-https
-      - run: curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-      - run: echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list
-      - run: sudo apt-get update
-      - run: sudo apt-get install -y kubectl
+      - restore_cache: &restore_cache_pip
+          key: pip-
+      - run: pip install awscli --user
+      - save_cache: &save_cache_pip
+          key: pip-{{ .Revision }}
+          paths: [ ~/.cache/pip ]
+
       - run: >
-          curl
-          --location
-          https://github.com/digitalocean/doctl/releases/download/v1.12.2/doctl-1.12.2-linux-amd64.tar.gz |
-          sudo tar --extract --gzip --directory /usr/local/bin/
-      - run: mkdir ~/.kube
+          sudo curl
+          -o /usr/local/bin/kubectl
+          https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl
       - run: >
-          doctl kubernetes cluster kubeconfig show fb1e6d14-4d82-4ac1-8358-eb69dcae319d > ~/.kube/config.yml
+          sudo chmod +x /usr/local/bin/kubectl
+      
+      - run: >
+          sudo curl
+          -o /usr/local/bin/aws-iam-authenticator
+          https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/aws-iam-authenticator
+      - run: >
+          sudo chmod +x /usr/local/bin/aws-iam-authenticator
       
       - checkout
       - attach_workspace: *attach_workspace
       
       - run: >
-          kubectl
-          --kubeconfig ~/.kube/config.yml
-          --filename .kube/deploy.yml
-          apply
+          ~/.local/bin/aws eks update-kubeconfig --name region-internal      
 
       - run: >
           kubectl
-          --kubeconfig ~/.kube/config.yml
           set image deployment/$CIRCLE_PROJECT_REPONAME $CIRCLE_PROJECT_REPONAME=gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
+
 
 workflows:
   version: 2
@@ -107,35 +120,39 @@ workflows:
           filters: &filters_all
             tags:
               only: /.*?/
-
-      - lint:
+      - lint: &test_job
           requires: [ prepare-npm ]
           filters: *filters_all
-      - spec:
-          requires: [ prepare-npm ]
-          filters: *filters_all
+      - spec: *test_job
 
-      - approve-deploy:
-          type: approval
-          filters: &filters_deploy
+      - push-image-latest:
+          context: docker-authorized
+          requires: 
+            - lint
+            - spec
+          filters:
+            branches:
+              only: master
+            tags:
+              only:
+                # v1.0.0-1 / v1.0.0-pre1 / v1.0.0
+                - /^v\d+\.\d+\.\d+(\-.+)?$/
+
+      - push-image:
+          context: docker-authorized
+          requires: 
+            - lint
+            - spec
+          filters: &filters_prerelease
             branches:
               ignore: /.*?/
             tags:
               only:
-                # v1.0.0
-                - /^v\d+\.\d+\.\d+$/
-                # v1.0.0-1 / v1.0.0
-                - /^v\d+\.\d+\.\d+(\-\d+)?$/
+                # v1.0.0-1 / v1.0.0-pre1 / v1.0.0
+                - /^v\d+\.\d+\.\d+(\-.+)?$/
 
-      - push-image:
-          context: docker-authorized
-          requires: &requires_push
-            - approve-deploy
-            - spec
-            - lint
-          filters: *filters_deploy
-
-      - update-cluster-internal:
-          context: do-authorized
+      - update-cluster-region-internal:
+          context: aws-authorized
           requires: [ push-image ]
-          filters: *filters_deploy
+          filters: *filters_prerelease
+          

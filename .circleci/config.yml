@@ -3,7 +3,7 @@ version: 2
 jobs:
   prepare-npm:
     docker: &docker_node
-      - image: circleci/node:8
+      - image: circleci/node:10
     steps:
       - checkout
       - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
@@ -18,6 +18,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
+            - .npmrc
             - node_modules
             - node
             - module
@@ -40,17 +41,101 @@ jobs:
       - store_test_results:
           path: /tmp/test-results
 
+  push-image:
+    docker: &docker_buildpack
+      - image: circleci/buildpack-deps
+    steps: &push_image_steps
+      - setup_remote_docker: &setup_remote_docker
+          docker_layer_caching: true
+
+      - checkout
+      - attach_workspace: *attach_workspace
+      
+      - run: >
+          docker login
+          --username $DOCKER_USERNAME
+          --password $DOCKER_PASSWORD
+      - run: >
+          docker build
+          --tag gameye/$CIRCLE_PROJECT_REPONAME:latest
+          --tag gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
+          .
+      - run: docker push gameye/$CIRCLE_PROJECT_REPONAME:latest
+      - run: docker push gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
+
+  update-cluster-internal:
+    environment:
+      CLUSTER: fb1e6d14-4d82-4ac1-8358-eb69dcae319d #internal-world
+      DIGITALOCEAN_ENABLE_BETA: 1
+    docker: *docker_buildpack
+    steps: &update_cluster_steps
+      - run: sudo apt-get update
+      - run: sudo apt-get install -y apt-transport-https
+      - run: curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+      - run: echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list
+      - run: sudo apt-get update
+      - run: sudo apt-get install -y kubectl
+      - run: >
+          curl
+          --location
+          https://github.com/digitalocean/doctl/releases/download/v1.12.2/doctl-1.12.2-linux-amd64.tar.gz |
+          sudo tar --extract --gzip --directory /usr/local/bin/
+      - run: mkdir ~/.kube
+      - run: >
+          doctl kubernetes cluster kubeconfig show fb1e6d14-4d82-4ac1-8358-eb69dcae319d > ~/.kube/config.yml
+      
+      - checkout
+      - attach_workspace: *attach_workspace
+      
+      - run: >
+          kubectl
+          --kubeconfig ~/.kube/config.yml
+          --filename .kube/deploy.yml
+          apply
+
+      - run: >
+          kubectl
+          --kubeconfig ~/.kube/config.yml
+          set image deployment/$CIRCLE_PROJECT_REPONAME $CIRCLE_PROJECT_REPONAME=gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
+
 workflows:
   version: 2
   main:
     jobs:
       - prepare-npm:
           context: npm-authorized
-          filters: &filter_all
+          filters: &filters_all
             tags:
               only: /.*?/
-      - lint: &test_job
-          requires:
-            - prepare-npm
-          filters: *filter_all
-      - spec: *test_job
+
+      - lint:
+          requires: [ prepare-npm ]
+          filters: *filters_all
+      - spec:
+          requires: [ prepare-npm ]
+          filters: *filters_all
+
+      - approve-deploy:
+          type: approval
+          filters: &filters_deploy
+            branches:
+              ignore: /.*?/
+            tags:
+              only:
+                # v1.0.0
+                - /^v\d+\.\d+\.\d+$/
+                # v1.0.0-1 / v1.0.0
+                - /^v\d+\.\d+\.\d+(\-\d+)?$/
+
+      - push-image:
+          context: docker-authorized
+          requires: &requires_push
+            - approve-deploy
+            - spec
+            - lint
+          filters: *filters_deploy
+
+      - update-cluster-internal:
+          context: do-authorized
+          requires: [ push-image ]
+          filters: *filters_deploy

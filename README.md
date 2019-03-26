@@ -9,3 +9,15 @@ like this:
 ```bash
 ln test.sh .git/hooks/pre-commit
 ```
+
+## What does it do?
+ 1. Read version(s) from storage (once!)
+ 2. Compare that version to version from steam-api
+ 3. Continue polling the steam api to figure out if there is a new version available
+ 4. If a new version is available, an update is needed so trigger CI via circleci api
+
+## tools
+Trigger a build:
+```bash
+curl -X POST --header "Content-Type: application/json" -d '{"tag":"steamcmd"}' https://circleci.com/api/v1.1/project/github/Gameye/steam-images/build?circle-token=${CIRCLE_API_USER_TOKEN}
+```

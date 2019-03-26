@@ -15,7 +15,28 @@
             "outFiles": [
                 "${workspaceRoot}/node/**/*.js"
             ],
-            "preLaunchTask": "watch"
+            "preLaunchTask": "watch",
+            "env": {
+                "DEBUG": "*"
+            },
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "run program",
+            "program": "${workspaceRoot}/src/program.ts",
+            "args": [],
+            "cwd": "${workspaceRoot}",
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/node/**/*.js"
+            ],
+            "preLaunchTask": "watch",
+            "env": {
+                "DEBUG": "*"
+            },
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }

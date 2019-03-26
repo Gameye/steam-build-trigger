@@ -4,6 +4,12 @@
         "tslint:recommended"
     ],
     "jsRules": {},
-    "rules": {},
+    "rules": {
+        "curly": false,
+        "interface-name": false,
+        "object-literal-sort-keys": false,
+        "arrow-parens": false,
+        "one-line": false
+    },
     "rulesDirectory": []
 }

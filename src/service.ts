@@ -19,25 +19,7 @@ export interface UpdaterServiceConfig {
     games: UpdaterServiceGameConfig[];
 }
 
-//#region errors
-
-// tslint:disable:max-classes-per-file
-
-class InvalidLatestVersionFormat extends Error {
-    constructor(public latest: string) {
-        super(`invalid latest version format '${latest}'`);
-    }
-}
-
-//#endregion
-
 export class UpdaterService extends EventEmitter {
-
-    //#region errors
-
-    public static InvalidLatestVersionFormat = InvalidLatestVersionFormat;
-
-    //#endregion
 
     private promise?: Promise<void>;
     private timeoutHandle?: NodeJS.Timeout;

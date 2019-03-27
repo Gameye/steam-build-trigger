@@ -1,0 +1,12 @@
+games:
+  - name: csgo
+    steamId: 730
+    repos:
+      - csgo
+      - csgo-dem
+      - csgo-get5
+  - name: tf2
+    steamId: 440
+    repos:
+      - tf2
+      - tf2-serveme

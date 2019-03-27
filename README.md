@@ -1,5 +1,5 @@
-# Steam distribution updater
-Update steam distributions when a new version is released by steam
+# Steam build trigger
+Trigger a steam build when a new version is released by steam
 
 ## Automated tests
 Never commit something that breaks the build! You can
@@ -11,7 +11,7 @@ ln test.sh .git/hooks/pre-commit
 ```
 
 ## What does it do?
- 1. Read version(s) from storage (once!)
+ 1. Read initial version from the steam-api
  2. Compare that version to version from steam-api
  3. Continue polling the steam api to figure out if there is a new version available
  4. If a new version is available, an update is needed so trigger CI via circleci api
@@ -19,5 +19,5 @@ ln test.sh .git/hooks/pre-commit
 ## tools
 Trigger a build:
 ```bash
-curl -X POST --header "Content-Type: application/json" -d '{"tag":"steamcmd"}' https://circleci.com/api/v1.1/project/github/Gameye/steam-images/build?circle-token=${CIRCLE_API_USER_TOKEN}
+curl -X POST --header "Content-Type: application/json" -d '{"branch":"master"}' https://circleci.com/api/v1.1/project/github/Gameye/tf2/build?circle-token=${CIRCLE_API_USER_TOKEN}
 ```

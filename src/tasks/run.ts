@@ -70,7 +70,7 @@ async function runTask(
     const logger = bunyan.createLogger({
         level: logLevel,
         name: pkg.name,
-        src: true,
+        version: pkg.version,
     });
 
     const config: UpdaterServiceConfig = {
@@ -90,22 +90,31 @@ async function runTask(
 
     const service = new UpdaterService(config);
 
-    service.on("starting", () => logger.info({ event: "starting" }));
-    service.on("started", () => logger.info({ event: "started" }));
+    service.on("starting", () => logger.info({ event: { type: "starting" } }));
+    service.on("started", () => logger.info({ event: { type: "started" } }));
 
-    service.on("stopped", () => logger.info({ event: "stopped" }));
-    service.on("stopping", () => logger.info({ event: "stopping" }));
+    service.on("stopped", () => logger.info({ event: { type: "stopped" } }));
+    service.on("stopping", () => logger.info({ event: { type: "stopping" } }));
 
-    service.on("stepped", () => logger.trace({ event: "stepped" }));
-    service.on("stepping", () => logger.trace({ event: "stepping" }));
+    service.on("stepped", () => logger.trace({ event: { type: "stepped" } }));
+    service.on("stepping", () => logger.trace({ event: { type: "stepping" } }));
 
-    service.on("build", repo => logger.info({ event: "build", repo }));
+    service.on("build", repo => logger.info({
+        event: {
+            type: "build",
+            payload: { repo },
+        },
+    }));
     service.on(
-        "initialize-version",
+        "intialize-version",
         (name, version) => logger.info({
-            event: "initialize-version",
-            name,
-            version,
+            event: {
+                type: "initialize-version",
+                payload: {
+                    name,
+                    version,
+                },
+            },
         }),
     );
     service.on(
@@ -113,15 +122,19 @@ async function runTask(
         (
             name,
             version,
-            fromVersion,
+            oldVersion,
         ) => logger.info({
-            event: "update-version",
-            name,
-            version,
-            fromVersion,
+            event: {
+                type: "update-version",
+                payload: {
+                    name,
+                    version,
+                    oldVersion,
+                },
+            },
         }),
     );
-    service.on("error", error => logger.error(error));
+    service.on("error", error => logger.error({ err: error }));
     service.on("error", error => Sentry.captureException(error));
 
     try {

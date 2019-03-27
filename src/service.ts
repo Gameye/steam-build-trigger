@@ -146,7 +146,7 @@ export class UpdaterService extends EventEmitter {
                 headers: { "Content-Type": "application/json" },
             });
             if (!response.ok) {
-                throw createHttpError(response.statusText, response.status);
+                throw createHttpError(response.status, response.statusText);
             }
         }
         catch (error) {

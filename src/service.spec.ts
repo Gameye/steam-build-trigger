@@ -95,7 +95,7 @@ test.only("http-error", t => TestContext.with(async ({
         if (err instanceof HttpError) {
             t.equal(err.status, 404);
             t.equal(err.statusCode, 404);
-            t.equal(err.message, "Not Found")
+            t.equal(err.message, "Not Found");
             err = null;
         }
         if (err) throw err;

@@ -47,11 +47,14 @@ export class UpdaterService extends EventEmitter {
     }
 
     public async start() {
+        this.emit("starting");
+
         const { versionMap, config } = this;
 
         for (const { name, steamId } of config.games) {
             const latestVersion = await this.getRequiredVersion(steamId, 0);
 
+            this.emit("intialize-version", name, latestVersion);
             versionMap[name] = latestVersion;
         }
 
@@ -60,6 +63,8 @@ export class UpdaterService extends EventEmitter {
     }
 
     public async stop() {
+        this.emit("stopping");
+
         if (this.timeoutHandle) clearTimeout(this.timeoutHandle);
         this.timeoutHandle = undefined;
 
@@ -68,6 +73,8 @@ export class UpdaterService extends EventEmitter {
     }
 
     private async step() {
+        this.emit("stepping");
+
         const { versionMap, config } = this;
 
         for (const { name, steamId, repos } of config.games) {
@@ -77,6 +84,7 @@ export class UpdaterService extends EventEmitter {
 
                 if (version === requiredVersion) continue;
 
+                this.emit("update-version", name, requiredVersion, version);
                 versionMap[name] = requiredVersion;
 
                 if (requiredVersion === 0) continue;
@@ -90,6 +98,7 @@ export class UpdaterService extends EventEmitter {
             }
         }
 
+        this.emit("stepped");
     }
 
     private cycle = () => this.promise = this.step().

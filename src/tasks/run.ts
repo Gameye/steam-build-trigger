@@ -1,10 +1,13 @@
 import * as Sentry from "@sentry/node";
+import * as bunyan from "bunyan";
 import * as program from "commander";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
 import { UpdaterService, UpdaterServiceConfig } from "../service";
 import { waitForSignal } from "../utils";
+import { readPackage } from "../utils";
 
+const pkg = readPackage();
 const { env } = process;
 
 program.
@@ -35,6 +38,7 @@ program.
     ).
     option("--interval <msec>", "Polling interval in milliseconds", Number, 60 * 1000).
     option("--sentry-dsn [string]", "Public DSN for Sentry", String, env.SENTRY_DSN).
+    option("--log-level <trace|debug|info|warn|error|fatal>", "Log level", String, env.LOG_LEVEL || "info").
     action(runTask);
 
 interface RunTaskConfig {
@@ -44,6 +48,7 @@ interface RunTaskConfig {
     circleApiUserToken: string;
     interval: number;
     sentryDsn?: string;
+    logLevel: "trace" | "debug" | "info" | "warn" | "error" | "fatal";
 }
 
 async function runTask(
@@ -55,12 +60,18 @@ async function runTask(
         circleApiUserToken,
         interval,
         sentryDsn: sentryDSN,
+        logLevel,
     }: RunTaskConfig,
 ) {
-    // tslint:disable no-console
     if (sentryDSN) {
         Sentry.init({ dsn: sentryDSN });
     }
+
+    const logger = bunyan.createLogger({
+        level: logLevel,
+        name: pkg.name,
+        src: true,
+    });
 
     const config: UpdaterServiceConfig = {
         steamApiEndpoint,
@@ -78,10 +89,39 @@ async function runTask(
     }
 
     const service = new UpdaterService(config);
-    service.on("started", () => console.log("started"));
-    service.on("stopped", () => console.log("stopped"));
-    service.on("build", name => console.log(`build ${name}`));
-    service.on("error", error => console.error(error));
+
+    service.on("starting", () => logger.info({ event: "starting" }));
+    service.on("started", () => logger.info({ event: "started" }));
+
+    service.on("stopped", () => logger.info({ event: "stopped" }));
+    service.on("stopping", () => logger.info({ event: "stopping" }));
+
+    service.on("stepped", () => logger.trace({ event: "stepped" }));
+    service.on("stepping", () => logger.trace({ event: "stepping" }));
+
+    service.on("build", repo => logger.info({ event: "build", repo }));
+    service.on(
+        "initialize-version",
+        (name, version) => logger.info({
+            event: "initialize-version",
+            name,
+            version,
+        }),
+    );
+    service.on(
+        "update-version",
+        (
+            name,
+            version,
+            fromVersion,
+        ) => logger.info({
+            event: "update-version",
+            name,
+            version,
+            fromVersion,
+        }),
+    );
+    service.on("error", error => logger.error(error));
     service.on("error", error => Sentry.captureException(error));
 
     try {

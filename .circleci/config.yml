@@ -108,6 +108,9 @@ jobs:
 
       - run: >
           kubectl
+          apply -f .kube/deploy.yml
+      - run: >
+          kubectl
           set image deployment/$CIRCLE_PROJECT_REPONAME $CIRCLE_PROJECT_REPONAME=gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
 
 

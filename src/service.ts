@@ -1,4 +1,3 @@
-import * as steam from "@gameye/steam-api";
 import { SteamApi } from "@gameye/steam-api";
 import { EventEmitter } from "events";
 import * as createHttpError from "http-errors";
@@ -42,7 +41,7 @@ export class UpdaterService extends EventEmitter {
 
     private promise?: Promise<void>;
     private timeoutHandle?: NodeJS.Timeout;
-    private readonly steamApi: steam.SteamApi;
+    private readonly steamApi: SteamApi;
     private readonly versionMap: { [name: string]: number };
     private readonly config: UpdaterServiceConfig;
 

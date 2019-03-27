@@ -36,7 +36,14 @@ export class TestContext {
             next();
         });
 
-        app.post("/project/github/Gameye/:repo/build", (req, res, next) => {
+        app.post("/project/github/Gameye/tf2/build", (req, res, next) => {
+            res.send({
+                status: 200,
+                body: "Build created",
+            });
+        });
+
+        app.post("/project/github/Gameye/csgo/build", (req, res, next) => {
             res.send({
                 status: 200,
                 body: "Build created",

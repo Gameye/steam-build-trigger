@@ -1,6 +1,7 @@
 import * as steam from "@gameye/steam-api";
 import { SteamApi } from "@gameye/steam-api";
 import { EventEmitter } from "events";
+import * as createHttpError from "http-errors";
 import fetch from "node-fetch";
 import * as querystring from "querystring";
 
@@ -29,12 +30,6 @@ class InvalidLatestVersionFormat extends Error {
     }
 }
 
-class ResponseError extends Error {
-    constructor(public code: number, message: string) {
-        super(message);
-    }
-}
-
 //#endregion
 
 export class UpdaterService extends EventEmitter {
@@ -42,7 +37,6 @@ export class UpdaterService extends EventEmitter {
     //#region errors
 
     public static InvalidLatestVersionFormat = InvalidLatestVersionFormat;
-    public static ResponseError = ResponseError;
 
     //#endregion
 
@@ -151,9 +145,8 @@ export class UpdaterService extends EventEmitter {
                 body: JSON.stringify({ branch: "master" }),
                 headers: { "Content-Type": "application/json" },
             });
-            const responseData = await response.json();
             if (!response.ok) {
-                throw new ResponseError(response.status, responseData.message);
+                throw createHttpError(response.statusText, response.status);
             }
         }
         catch (error) {

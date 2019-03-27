@@ -18,15 +18,17 @@
             "preLaunchTask": "watch",
             "env": {
                 "DEBUG": "*"
-            },
-            "envFile": "${workspaceFolder}/.env"
+            }
         },
         {
             "type": "node",
             "request": "launch",
             "name": "run program",
             "program": "${workspaceRoot}/src/program.ts",
-            "args": [],
+            "args": [
+                "run",
+                "config/staging.yaml"
+            ],
             "cwd": "${workspaceRoot}",
             "sourceMaps": true,
             "outFiles": [

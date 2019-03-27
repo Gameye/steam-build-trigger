@@ -65,7 +65,7 @@ test("service no build", t => TestContext.with(async ({
     await service.stop();
 }));
 
-test.only("http-error", t => TestContext.with(async ({
+test("http-error", t => TestContext.with(async ({
     steamApiEndpoint,
     circleApiEndpoint,
 }) => {

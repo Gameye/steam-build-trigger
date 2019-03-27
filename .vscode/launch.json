@@ -16,9 +16,7 @@
                 "${workspaceRoot}/node/**/*.js"
             ],
             "preLaunchTask": "watch",
-            "env": {
-                "DEBUG": "*"
-            }
+            "env": {}
         },
         {
             "type": "node",
@@ -27,6 +25,10 @@
             "program": "${workspaceRoot}/src/program.ts",
             "args": [
                 "run",
+                "--log-level",
+                "trace",
+                "--interval",
+                "2000",
                 "config/staging.yaml"
             ],
             "cwd": "${workspaceRoot}",
@@ -35,10 +37,9 @@
                 "${workspaceRoot}/node/**/*.js"
             ],
             "preLaunchTask": "watch",
-            "env": {
-                "DEBUG": "*"
-            },
-            "envFile": "${workspaceFolder}/.env"
+            "env": {},
+            "envFile": "${workspaceFolder}/.env",
+            "outputCapture": "std"
         }
     ]
 }

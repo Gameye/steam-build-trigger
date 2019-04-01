@@ -4,8 +4,7 @@ import * as program from "commander";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
 import { UpdaterService, UpdaterServiceConfig } from "../service";
-import { waitForSignal } from "../utils";
-import { readPackage } from "../utils";
+import { readPackage, waitForSignal } from "../utils";
 
 const pkg = readPackage();
 const { env } = process;
@@ -79,6 +78,7 @@ async function runTask(
         circleApiEndpoint,
         circleApiUserToken,
         interval,
+        branch: "",
         games: [],
     };
 
@@ -86,6 +86,7 @@ async function runTask(
         const configData = fs.readFileSync(configFile, "utf8");
         const configObject = yaml.load(configData);
         config.games = configObject.games;
+        config.branch = configObject.branch;
     }
 
     const service = new UpdaterService(config);

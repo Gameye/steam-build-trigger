@@ -1,4 +1,4 @@
-branch: develop
+branch: master
 games:
   - name: csgo
     steamId: 730

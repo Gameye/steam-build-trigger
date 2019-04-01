@@ -12,6 +12,7 @@ export interface UpdaterServiceGameConfig {
 
 export interface UpdaterServiceConfig {
     interval: number;
+    branch: string;
     steamApiEndpoint: string;
     steamApiKey: string;
     circleApiEndpoint: string;
@@ -90,7 +91,7 @@ export class UpdaterService extends EventEmitter {
                 if (requiredVersion === 0) continue;
 
                 await Promise.all(
-                    repos.map(repo => this.triggerBuild(repo)),
+                    repos.map(repo => this.triggerBuild(repo, config.branch)),
                 );
             }
             catch (error) {
@@ -119,7 +120,7 @@ export class UpdaterService extends EventEmitter {
         return requiredVersion as number;
     }
 
-    private async triggerBuild(repo: string) {
+    private async triggerBuild(repo: string, branch: string) {
         this.emit("build", repo);
 
         try {
@@ -132,7 +133,7 @@ export class UpdaterService extends EventEmitter {
 
             const response = await fetch(url, {
                 method: "POST",
-                body: JSON.stringify({ branch: "master" }),
+                body: JSON.stringify({ branch }),
                 headers: { "Content-Type": "application/json" },
             });
             if (!response.ok) {

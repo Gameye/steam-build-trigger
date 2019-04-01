@@ -8,6 +8,7 @@ test("service one build", t => TestContext.with(async ({
     circleApiEndpoint,
 }) => {
     const service = new UpdaterService({
+        branch: "local",
         interval: 1000,
         steamApiEndpoint,
         steamApiKey: "123",
@@ -39,6 +40,7 @@ test("service no build", t => TestContext.with(async ({
     circleApiEndpoint,
 }) => {
     const service = new UpdaterService({
+        branch: "local",
         interval: 1000,
         steamApiEndpoint,
         steamApiKey: "123",
@@ -70,6 +72,7 @@ test("http-error", t => TestContext.with(async ({
     circleApiEndpoint,
 }) => {
     const service = new UpdaterService({
+        branch: "local",
         interval: 1000,
         steamApiEndpoint,
         steamApiKey: "123",

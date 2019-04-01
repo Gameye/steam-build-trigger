@@ -3,11 +3,11 @@ games:
   - name: csgo
     steamId: 730
     repos:
-      - csgo
-      - csgo-dem
-      - csgo-get5
+      - csgo-image
+      - csgo-dem-image
+      - csgo-get5-image
   - name: tf2
     steamId: 440
     repos:
-      - tf2
-      - tf2-serveme
+      - tf2-image
+      - tf2-serveme-image

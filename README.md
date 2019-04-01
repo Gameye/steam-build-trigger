@@ -19,5 +19,5 @@ ln test.sh .git/hooks/pre-commit
 ## tools
 Trigger a build:
 ```bash
-curl -X POST --header "Content-Type: application/json" -d '{"branch":"master"}' https://circleci.com/api/v1.1/project/github/Gameye/tf2/build?circle-token=${CIRCLE_API_USER_TOKEN}
+curl -X POST --header "Content-Type: application/json" -d '{"branch":"develop"}' https://circleci.com/api/v1.1/project/github/Gameye/tf2-image/build?circle-token=${CIRCLE_API_USER_TOKEN}
 ```

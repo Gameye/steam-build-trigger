@@ -91,19 +91,53 @@ async function runTask(
 
     const service = new UpdaterService(config);
 
-    service.on("starting", () => logger.info({ event: { type: "starting" } }));
-    service.on("started", () => logger.info({ event: { type: "started" } }));
+    service.on("starting", () => logger.info({
+        event: {
+            type: "starting",
+            payload: { iteration: service.iteration },
+        },
+    }));
+    service.on("started", () => logger.info({
+        event: {
+            type: "started",
+            payload: { iteration: service.iteration },
+        },
+    }));
 
-    service.on("stopped", () => logger.info({ event: { type: "stopped" } }));
-    service.on("stopping", () => logger.info({ event: { type: "stopping" } }));
+    service.on("stopped", () => logger.info({
+        event: {
+            type: "stopped",
+            payload: { iteration: service.iteration },
+        },
+    }));
+    service.on("stopping", () => logger.info({
+        event: {
+            type: "stopping",
+            payload: { iteration: service.iteration },
+        },
 
-    service.on("stepped", () => logger.trace({ event: { type: "stepped" } }));
-    service.on("stepping", () => logger.trace({ event: { type: "stepping" } }));
+    }));
+
+    service.on("stepped", () => logger.trace({
+        event: {
+            type: "stepped",
+            payload: { iteration: service.iteration },
+        },
+    }));
+    service.on("stepping", () => logger.trace({
+        event: {
+            type: "stepping",
+            payload: { iteration: service.iteration },
+        },
+    }));
 
     service.on("build", repo => logger.info({
         event: {
             type: "build",
-            payload: { repo },
+            payload: {
+                repo,
+                iteration: service.iteration,
+            },
         },
     }));
     service.on(
@@ -114,6 +148,7 @@ async function runTask(
                 payload: {
                     name,
                     version,
+                    iteration: service.iteration,
                 },
             },
         }),
@@ -131,6 +166,7 @@ async function runTask(
                     name,
                     version,
                     oldVersion,
+                    iteration: service.iteration,
                 },
             },
         }),

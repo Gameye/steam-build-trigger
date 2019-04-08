@@ -22,6 +22,8 @@ export interface UpdaterServiceConfig {
 
 export class UpdaterService extends EventEmitter {
 
+    public iteration = 0;
+
     private promise?: Promise<void>;
     private timeoutHandle?: NodeJS.Timeout;
     private readonly steamApi: SteamApi;
@@ -74,6 +76,8 @@ export class UpdaterService extends EventEmitter {
     }
 
     private async step() {
+        this.iteration++;
+
         this.emit("stepping");
 
         const { versionMap, config } = this;

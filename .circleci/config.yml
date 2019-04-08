@@ -106,9 +106,8 @@ jobs:
       - run: >
           ~/.local/bin/aws eks update-kubeconfig --name region-internal      
 
-      - run: >
-          kubectl
-          apply -f .kube/deploy.yml
+      - run: kubectl apply -f kubernetes
+
       - run: >
           kubectl
           set image deployment/$CIRCLE_PROJECT_REPONAME $CIRCLE_PROJECT_REPONAME=gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG

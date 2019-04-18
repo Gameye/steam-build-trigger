@@ -112,10 +112,10 @@ jobs:
           kubectl
           set image deployment/$CIRCLE_PROJECT_REPONAME $CIRCLE_PROJECT_REPONAME=gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
 
-  update-cluster-production-internal:
+  update-cluster-region-ireland:
     environment:
-      AWS_DEFAULT_REGION: eu-central-1
-      CLUSTER: region-production
+      AWS_DEFAULT_REGION: eu-west-1
+      CLUSTER: region-ireland
     docker: *docker_python
     steps: *update_cluster_steps
 
@@ -164,7 +164,7 @@ workflows:
           requires: [ push-image ]
           filters: *filters_prerelease
 
-      - update-cluster-production-internal:
+      - update-cluster-region-ireland:
           context: aws-authorized
           requires: [ push-image ]
           filters: &filters_release

@@ -6,6 +6,7 @@ games:
       - csgo-image
       - csgo-dem-image
       - csgo-get5-image
+      - csgo-practice-image
   - name: tf2
     steamId: 440
     repos:

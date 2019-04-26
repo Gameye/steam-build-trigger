@@ -39,7 +39,7 @@ jobs:
   push-image-latest:
     docker: &docker_buildpack
       - image: circleci/buildpack-deps
-    steps: &push_image_steps
+    steps:
       - setup_remote_docker: &setup_remote_docker
           docker_layer_caching: true
       - checkout
@@ -57,7 +57,7 @@ jobs:
   push-image:
     docker: &docker_buildpack
       - image: circleci/buildpack-deps
-    steps: &push_image_steps
+    steps:
       - setup_remote_docker: &setup_remote_docker
           docker_layer_caching: true
       - checkout

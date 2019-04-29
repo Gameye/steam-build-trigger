@@ -41,7 +41,7 @@ jobs:
       - image: circleci/buildpack-deps
     steps:
       - setup_remote_docker: &setup_remote_docker
-          docker_layer_caching: true
+          docker_layer_caching: false
       - checkout
       - attach_workspace: *attach_workspace
       - run: >
@@ -58,8 +58,7 @@ jobs:
     docker: &docker_buildpack
       - image: circleci/buildpack-deps
     steps:
-      - setup_remote_docker: &setup_remote_docker
-          docker_layer_caching: true
+      - setup_remote_docker: *setup_remote_docker
       - checkout
       - attach_workspace: *attach_workspace
       - run: >

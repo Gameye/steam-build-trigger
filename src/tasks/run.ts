@@ -36,7 +36,6 @@ program.
         env.CIRCLE_API_USER_TOKEN,
     ).
     option("--interval <msec>", "Polling interval in milliseconds", Number, 60 * 1000).
-    option("--sentry-dsn [string]", "Public DSN for Sentry", String, env.SENTRY_DSN).
     option("--log-level <trace|debug|info|warn|error|fatal>", "Log level", String, env.LOG_LEVEL || "info").
     action(runTask);
 
@@ -46,7 +45,6 @@ interface RunTaskConfig {
     circleApiEndpoint: string;
     circleApiUserToken: string;
     interval: number;
-    sentryDsn?: string;
     logLevel: "trace" | "debug" | "info" | "warn" | "error" | "fatal";
 }
 
@@ -58,13 +56,10 @@ async function runTask(
         circleApiEndpoint,
         circleApiUserToken,
         interval,
-        sentryDsn: sentryDSN,
         logLevel,
     }: RunTaskConfig,
 ) {
-    if (sentryDSN) {
-        Sentry.init({ dsn: sentryDSN });
-    }
+    Sentry.init();
 
     const logger = bunyan.createLogger({
         level: logLevel,

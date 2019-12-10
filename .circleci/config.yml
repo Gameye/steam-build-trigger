@@ -71,53 +71,6 @@ jobs:
           .
       - run: docker push gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
 
-  update-cluster-region-internal:
-    environment:
-      AWS_DEFAULT_REGION: eu-west-1
-      CLUSTER: region-internal
-    docker: &docker_python
-      - image: circleci/python:2.7
-    steps: &update_cluster_steps
-      - restore_cache: &restore_cache_pip
-          key: pip-
-      - run: pip install awscli --user
-      - save_cache: &save_cache_pip
-          key: pip-{{ .Revision }}
-          paths: [ ~/.cache/pip ]
-
-      - run: >
-          sudo curl
-          -o /usr/local/bin/kubectl
-          https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/kubectl
-      - run: >
-          sudo chmod +x /usr/local/bin/kubectl
-      
-      - run: >
-          sudo curl
-          -o /usr/local/bin/aws-iam-authenticator
-          https://amazon-eks.s3-us-west-2.amazonaws.com/1.11.5/2018-12-06/bin/linux/amd64/aws-iam-authenticator
-      - run: >
-          sudo chmod +x /usr/local/bin/aws-iam-authenticator
-      
-      - checkout
-      - attach_workspace: *attach_workspace
-      
-      - run: >
-          ~/.local/bin/aws eks update-kubeconfig --name $CLUSTER
-
-      - run: kubectl apply -f kubernetes
-
-      - run: >
-          kubectl
-          set image deployment/$CIRCLE_PROJECT_REPONAME $CIRCLE_PROJECT_REPONAME=gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
-
-  update-cluster-region-ireland:
-    environment:
-      AWS_DEFAULT_REGION: eu-west-1
-      CLUSTER: region-ireland
-    docker: *docker_python
-    steps: *update_cluster_steps
-
 workflows:
   version: 2
   main:
@@ -158,19 +111,4 @@ workflows:
                 # v1.0.0-1 / v1.0.0-pre1 / v1.0.0
                 - /^v\d+\.\d+\.\d+(\-.+)?$/
 
-      - update-cluster-region-internal:
-          context: aws-authorized
-          requires: [ push-image ]
-          filters: *filters_prerelease
-
-      - update-cluster-region-ireland:
-          context: aws-authorized
-          requires: [ push-image ]
-          filters: &filters_release
-            branches:
-              ignore: /.*?/
-            tags:
-              only:
-                # v1.0.0
-                - /^v\d+\.\d+\.\d$/
 

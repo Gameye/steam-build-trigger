@@ -8,16 +8,12 @@ jobs:
       - checkout
       - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
       - run: npm version $CIRCLE_TAG
-      - restore_cache:
-          key: npm-
       - run: npm install
       - run: npm install tap-junit
-      - save_cache:
-          key: npm-{{ .Revision }}
-          paths: [ ~/.npm ]
       - persist_to_workspace:
           root: .
-          paths: [ package.json, package-lock.json, node_modules, node, module, types ]
+          paths:
+            [package.json, package-lock.json, node_modules, node, module, types]
 
   lint:
     docker: *docker_node
@@ -27,38 +23,33 @@ jobs:
           at: .
       - run: npm run lint
 
-  spec:
-    docker: *docker_node
+  test:
+    machine:
+      image: ubuntu-1604:201903-01
     steps:
-      - checkout
-      - attach_workspace: *attach_workspace
-      - run: npm run spec-all | $(npm bin)/tap-junit --output "/tmp/test-results/spec"
-      - store_test_results:
-          path: /tmp/test-results
-
-  push-image-latest:
-    docker: &docker_buildpack
-      - image: circleci/buildpack-deps
-    steps:
-      - setup_remote_docker: &setup_remote_docker
-          docker_layer_caching: false
       - checkout
       - attach_workspace: *attach_workspace
       - run: >
           docker login
           --username $DOCKER_USERNAME
           --password $DOCKER_PASSWORD
-      - run: >
-          docker build
-          --tag gameye/$CIRCLE_PROJECT_REPONAME:latest
-          .
-      - run: docker push gameye/$CIRCLE_PROJECT_REPONAME:latest
+      - run:
+          environment:
+            NVM_DIR: /opt/circleci/.nvm
+          command: |
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm install 12 && nvm alias default 12
+            npm run coverage
+      - store_artifacts:
+          destination: report
+          path: report
 
   push-image:
     docker: &docker_buildpack
       - image: circleci/buildpack-deps
-    steps:
-      - setup_remote_docker: *setup_remote_docker
+    steps: &push_image_steps
+      - setup_remote_docker: &setup_remote_docker
+          docker_layer_caching: true
       - checkout
       - attach_workspace: *attach_workspace
       - run: >
@@ -81,33 +72,21 @@ workflows:
             tags:
               only: /.*?/
       - lint: &test_job
-          requires: [ prepare-npm ]
+          requires: [prepare-npm]
           filters: *filters_all
-      - spec: *test_job
-
-      - push-image-latest:
+      - test:
           context: docker-authorized
-          requires: 
-            - lint
-            - spec
-          filters:
-            branches:
-              only: master
-            tags:
-              only:
-                # v1.0.0-1 / v1.0.0-pre1 / v1.0.0
-                - /^v\d+\.\d+\.\d+(\-.+)?$/
+          requires: [prepare-npm]
+          filters: *filters_all
 
       - push-image:
           context: docker-authorized
-          requires: 
+          requires:
             - lint
-            - spec
-          filters: &filters_prerelease
+            - test
+          filters:
             branches:
               ignore: /.*?/
             tags:
-              only:
-                # v1.0.0-1 / v1.0.0-pre1 / v1.0.0
-                - /^v\d+\.\d+\.\d+(\-.+)?$/
-
+              # v1.0.0-1 / v1.0.0-pre1 / v1.0.0
+              only: /^v\d+\.\d+\.\d+(\-.+)?$/

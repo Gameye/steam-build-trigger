@@ -1,40 +1,17 @@
 version: 2
 
 jobs:
-  prepare-npm:
-    docker: &docker_node
-      - image: circleci/node:12
-    steps:
-      - checkout
-      - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
-      - run: npm version $CIRCLE_TAG
-      - restore_cache:
-          key: npm-
-      - run: npm install
-      - run: npm install tap-junit
-      - save_cache:
-          key: npm-{{ .Revision }}
-          paths: [~/.npm]
-      - persist_to_workspace:
-          root: .
-          paths:
-            [package.json, package-lock.json, node_modules, node, module, types]
-
-  lint:
-    docker: *docker_node
-    steps:
-      - checkout
-      - attach_workspace: &attach_workspace
-          at: .
-      - run: npm run lint
-
-  spec:
+  test:
     machine:
       image: ubuntu-1604:201903-01
+      docker_layer_caching: false
     steps:
       - checkout
-      - attach_workspace: *attach_workspace
-      - run: npm install tap-junit
+      - run: >
+          docker login
+          --username $DOCKER_USERNAME
+          --password $DOCKER_PASSWORD
+      - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
       - run:
           environment:
             NVM_DIR: /opt/circleci/.nvm
@@ -42,18 +19,17 @@ jobs:
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             nvm install 12
             nvm alias default 12
-            npm run spec-all | $(npm bin)/tap-junit --output "/tmp/test-results/spec"
-      - store_test_results:
-          path: /tmp/test-results
+            npm install
+            npm run lint
+            npm test
 
-  push-image:
+  push:
     docker:
       - image: circleci/buildpack-deps
     steps:
       - setup_remote_docker:
           docker_layer_caching: false
       - checkout
-      - attach_workspace: *attach_workspace
       - run: >
           docker login
           --username $DOCKER_USERNAME
@@ -71,22 +47,15 @@ workflows:
 
   test:
     jobs:
-      - prepare-npm:
+      - test:
           context: authorized
-          filters: &filters_all
+          filters:
             tags:
               only: /.*?/
-      - lint:
-          requires: [prepare-npm]
-          filters: *filters_all
-      - spec:
-          context: authorized
-          requires: [prepare-npm]
-          filters: *filters_all
 
   push:
     jobs:
-      - push-image:
+      - push:
           context: authorized
           filters:
             branches:

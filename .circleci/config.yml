@@ -3,13 +3,18 @@ version: 2
 jobs:
   prepare-npm:
     docker: &docker_node
-      - image: circleci/node:10
+      - image: circleci/node:12
     steps:
       - checkout
       - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
       - run: npm version $CIRCLE_TAG
+      - restore_cache:
+          key: npm-
       - run: npm install
       - run: npm install tap-junit
+      - save_cache:
+          key: npm-{{ .Revision }}
+          paths: [~/.npm]
       - persist_to_workspace:
           root: .
           paths:
@@ -23,33 +28,30 @@ jobs:
           at: .
       - run: npm run lint
 
-  test:
+  spec:
     machine:
       image: ubuntu-1604:201903-01
     steps:
       - checkout
       - attach_workspace: *attach_workspace
-      - run: >
-          docker login
-          --username $DOCKER_USERNAME
-          --password $DOCKER_PASSWORD
+      - run: npm install tap-junit
       - run:
           environment:
             NVM_DIR: /opt/circleci/.nvm
           command: |
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-            nvm install 12 && nvm alias default 12
-            npm run coverage
-      - store_artifacts:
-          destination: report
-          path: report
+            nvm install 12
+            nvm alias default 12
+            npm run spec-all | $(npm bin)/tap-junit --output "/tmp/test-results/spec"
+      - store_test_results:
+          path: /tmp/test-results
 
   push-image:
-    docker: &docker_buildpack
+    docker:
       - image: circleci/buildpack-deps
-    steps: &push_image_steps
-      - setup_remote_docker: &setup_remote_docker
-          docker_layer_caching: true
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: false
       - checkout
       - attach_workspace: *attach_workspace
       - run: >
@@ -58,32 +60,34 @@ jobs:
           --password $DOCKER_PASSWORD
       - run: >
           docker build
+          --build-arg NPM_VERSION=$CIRCLE_TAG
+          --build-arg NPM_TOKEN=$NPM_TOKEN
           --tag gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
           .
       - run: docker push gameye/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
 
 workflows:
   version: 2
-  main:
+
+  test:
     jobs:
       - prepare-npm:
-          context: npm-authorized
+          context: authorized
           filters: &filters_all
             tags:
               only: /.*?/
-      - lint: &test_job
+      - lint:
           requires: [prepare-npm]
           filters: *filters_all
-      - test:
-          context: docker-authorized
+      - spec:
+          context: authorized
           requires: [prepare-npm]
           filters: *filters_all
 
+  push:
+    jobs:
       - push-image:
-          context: docker-authorized
-          requires:
-            - lint
-            - test
+          context: authorized
           filters:
             branches:
               ignore: /.*?/

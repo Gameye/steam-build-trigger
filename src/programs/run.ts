@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/node";
 import * as bunyan from "bunyan";
 import * as program from "commander";
 import * as fs from "fs";
@@ -58,8 +57,6 @@ async function runTask(
         logLevel,
     }: RunTaskConfig,
 ) {
-    Sentry.init();
-
     const logger = bunyan.createLogger({
         level: logLevel,
         name: packageName,
@@ -166,11 +163,13 @@ async function runTask(
         }),
     );
     service.on("error", error => logger.error({ err: error }));
-    service.on("error", error => Sentry.captureException(error));
 
     try {
         await service.start();
         await waitForSignal("SIGINT", "SIGTERM");
+    }
+    catch (error) {
+        logger.error({ err: error });
     }
     finally {
         await service.stop();

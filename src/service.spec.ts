@@ -1,4 +1,6 @@
+import * as delay from "delay";
 import { HttpError } from "http-errors";
+import { second } from "msecs";
 import * as test from "tape-promise/tape";
 import { UpdaterService } from "./service";
 import { TestContext } from "./test";
@@ -28,7 +30,7 @@ test("service one build", t => TestContext.with(async ({
 
     await service.start();
 
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await delay(5 * second);
 
     t.equal(buildCount, 1);
 
@@ -60,7 +62,7 @@ test("service no build", t => TestContext.with(async ({
 
     await service.start();
 
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await delay(5 * second);
 
     t.equal(buildCount, 0);
 

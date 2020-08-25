@@ -1,7 +1,7 @@
 import * as path from "path";
 
-export const projectRoot = getProjectRoot();
+export const projectRoot = makeProjectRoot();
 
-function getProjectRoot() {
+function makeProjectRoot() {
     return path.resolve(__dirname, "..", "..");
 }

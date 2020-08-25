@@ -1,5 +1,4 @@
 import * as program from "commander";
-
-import "./tasks";
+import "./programs";
 
 program.parse(process.argv);

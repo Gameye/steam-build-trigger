@@ -47,6 +47,7 @@
     "http-errors": "^1.8.0",
     "js-yaml": "^3.14.0",
     "node-fetch": "^2.6.0",
-    "tslib": "^2.0.1"
+    "tslib": "^2.0.1",
+    "type-fest": "^0.16.0"
   }
 }

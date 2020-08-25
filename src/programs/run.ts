@@ -4,9 +4,8 @@ import * as program from "commander";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
 import { UpdaterService, UpdaterServiceConfig } from "../service";
-import { readPackage, waitForSignal } from "../utils";
+import { packageInfo, packageName, waitForSignal } from "../utils";
 
-const pkg = readPackage();
 const { env } = process;
 
 program.
@@ -63,8 +62,8 @@ async function runTask(
 
     const logger = bunyan.createLogger({
         level: logLevel,
-        name: pkg.name,
-        version: pkg.version,
+        name: packageName,
+        version: packageInfo.version,
     });
 
     const config: UpdaterServiceConfig = {

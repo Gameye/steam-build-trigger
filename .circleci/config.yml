@@ -21,8 +21,9 @@ jobs:
             nvm alias default 12
             npm install
             npm run lint
-            npm test
-
+            npm run coverage
+      - store_artifacts:
+          path: coverage/lcov-report
   push:
     docker:
       - image: circleci/buildpack-deps

@@ -22,6 +22,8 @@ RUN npm install --unsafe-perm
 # copy over the binaries that we've produced during the building process.
 FROM node:12-alpine
 
+WORKDIR /root
+
 # Add curl to our image so that healthchecks work
 RUN apk --update --no-cache add curl
 

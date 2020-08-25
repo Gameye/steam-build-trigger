@@ -31,7 +31,7 @@ COPY --from=builder /root/package.json /root/package.json
 COPY --from=builder /root/node /root/node
 COPY --from=builder /root/node_modules /root/node_modules
 
-COPY config /usr/bin/steam-build-trigger/config
+COPY config /root/config
 
 # Define our entry point that the container is to call when ran.
 ENTRYPOINT [ "node", "--unhandled-rejections", "strict", "/root/node/program" ]

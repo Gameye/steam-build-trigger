@@ -1,9 +1,10 @@
+import { AbortController } from "abort-controller";
 import * as bunyan from "bunyan";
 import * as program from "commander";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
 import { UpdaterService, UpdaterServiceConfig } from "../service";
-import { packageInfo, packageName, waitForSignal } from "../utils";
+import { packageInfo, packageName } from "../utils";
 
 const { env } = process;
 
@@ -57,6 +58,25 @@ async function runTask(
         logLevel,
     }: RunTaskConfig,
 ) {
+    /*
+    setup main abort controller to abort on sigint and sigterm, sigterm is sent
+    by kubernetes, sigint is basicalle ctrl-c sent from the console...
+
+    listeners are removed after the first signal, when there are no listeners and
+    a sigint and sigterm is received, a hard shutdown is initiated, this is what we
+    want!
+    */
+    const abortController = new AbortController();
+    const onAbort = () => {
+        process.removeListener("SIGINT", onAbort);
+        process.removeListener("SIGTERM", onAbort);
+        abortController.abort();
+    };
+    process.addListener("SIGINT", onAbort);
+    process.addListener("SIGTERM", onAbort);
+    /*
+    */
+
     const logger = bunyan.createLogger({
         level: logLevel,
         name: packageName,
@@ -82,43 +102,21 @@ async function runTask(
 
     const service = new UpdaterService(config);
 
-    service.on("starting", () => logger.info({
+    service.on("initialize", () => logger.trace({
         event: {
-            type: "starting",
-            payload: { iteration: service.iteration },
-        },
-    }));
-    service.on("started", () => logger.info({
-        event: {
-            type: "started",
-            payload: { iteration: service.iteration },
+            type: "initialize",
+            payload: {
+                iteration: service.iteration,
+            },
         },
     }));
 
-    service.on("stopped", () => logger.info({
+    service.on("iterate", () => logger.trace({
         event: {
-            type: "stopped",
-            payload: { iteration: service.iteration },
-        },
-    }));
-    service.on("stopping", () => logger.info({
-        event: {
-            type: "stopping",
-            payload: { iteration: service.iteration },
-        },
-
-    }));
-
-    service.on("stepped", () => logger.trace({
-        event: {
-            type: "stepped",
-            payload: { iteration: service.iteration },
-        },
-    }));
-    service.on("stepping", () => logger.trace({
-        event: {
-            type: "stepping",
-            payload: { iteration: service.iteration },
+            type: "iterate",
+            payload: {
+                iteration: service.iteration,
+            },
         },
     }));
 
@@ -162,16 +160,17 @@ async function runTask(
             },
         }),
     );
-    service.on("error", error => logger.error({ err: error }));
+    service.on("error", error => logger.warn({ err: error }));
 
     try {
-        await service.start();
-        await waitForSignal("SIGINT", "SIGTERM");
+        await service.run(abortController.signal);
     }
     catch (error) {
-        logger.error({ err: error });
+        if (error.name !== "AbortError") {
+            logger.error({ err: error });
+            process.exit(1);
+        }
     }
-    finally {
-        await service.stop();
-    }
+
+    process.exit(0);
 }

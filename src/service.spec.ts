@@ -1,5 +1,8 @@
-import * as test from "blue-tape";
+import { AbortController } from "abort-controller";
+import * as delay from "delay";
 import { HttpError } from "http-errors";
+import { second } from "msecs";
+import * as test from "tape-promise/tape";
 import { UpdaterService } from "./service";
 import { TestContext } from "./test";
 
@@ -7,6 +10,7 @@ test("service one build", t => TestContext.with(async ({
     steamApiEndpoint,
     circleApiEndpoint,
 }) => {
+    const abortController = new AbortController();
     const service = new UpdaterService({
         branch: "local",
         interval: 1000,
@@ -26,19 +30,27 @@ test("service one build", t => TestContext.with(async ({
     let buildCount = 0;
     service.on("build", name => buildCount++);
 
-    await service.start();
+    const runWait = service.run(abortController.signal);
 
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await delay(5 * second);
 
     t.equal(buildCount, 1);
 
-    await service.stop();
+    try {
+        abortController.abort();
+        await runWait;
+    }
+    catch (error) {
+        if (error.name === "AbortError") null;
+        else throw error;
+    }
 }));
 
 test("service no build", t => TestContext.with(async ({
     steamApiEndpoint,
     circleApiEndpoint,
 }) => {
+    const abortController = new AbortController();
     const service = new UpdaterService({
         branch: "local",
         interval: 1000,
@@ -58,19 +70,27 @@ test("service no build", t => TestContext.with(async ({
     let buildCount = 0;
     service.on("build", name => buildCount++);
 
-    await service.start();
+    const runWait = service.run(abortController.signal);
 
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await delay(5 * second);
 
     t.equal(buildCount, 0);
 
-    await service.stop();
+    try {
+        abortController.abort();
+        await runWait;
+    }
+    catch (error) {
+        if (error.name === "AbortError") null;
+        else throw error;
+    }
 }));
 
 test("http-error", t => TestContext.with(async ({
     steamApiEndpoint,
     circleApiEndpoint,
 }) => {
+    const abortController = new AbortController();
     const service = new UpdaterService({
         branch: "local",
         interval: 1000,
@@ -88,7 +108,7 @@ test("http-error", t => TestContext.with(async ({
     });
 
     const wait = new Promise((resolve, reject) => service.once("error", reject));
-    await service.start();
+    const runWait = service.run(abortController.signal);
 
     try {
         await wait;
@@ -99,10 +119,16 @@ test("http-error", t => TestContext.with(async ({
             t.equal(err.status, 404);
             t.equal(err.statusCode, 404);
             t.equal(err.message, "Not Found");
-            err = null;
         }
-        if (err) throw err;
+        else throw err;
     }
 
-    await service.stop();
+    try {
+        abortController.abort();
+        await runWait;
+    }
+    catch (error) {
+        if (error.name === "AbortError") null;
+        else throw error;
+    }
 }));

@@ -1,4 +1,6 @@
 import { SteamApi } from "@gameye/steam-api";
+import { AbortSignal } from "abort-controller";
+import * as delay from "delay";
 import { EventEmitter } from "events";
 import * as createHttpError from "http-errors";
 import fetch from "node-fetch";
@@ -24,8 +26,6 @@ export class UpdaterService extends EventEmitter {
 
     public iteration = 0;
 
-    private promise?: Promise<void>;
-    private timeoutHandle?: NodeJS.Timeout;
     private readonly steamApi: SteamApi;
     private readonly versionMap: { [name: string]: number };
     private readonly config: UpdaterServiceConfig;
@@ -49,8 +49,17 @@ export class UpdaterService extends EventEmitter {
         );
     }
 
-    public async start() {
-        this.emit("starting");
+    public async run(signal: AbortSignal) {
+        await this.initialize();
+
+        while (!signal.aborted) {
+            await this.iterate();
+            await delay(this.config.interval, { signal });
+        }
+    }
+
+    public async initialize() {
+        this.emit("intialize");
 
         const { versionMap, config } = this;
 
@@ -60,25 +69,12 @@ export class UpdaterService extends EventEmitter {
             this.emit("intialize-version", name, latestVersion);
             versionMap[name] = latestVersion;
         }
-
-        await this.cycle();
-        this.emit("started");
     }
 
-    public async stop() {
-        this.emit("stopping");
+    private async iterate() {
+        this.emit("iterate");
 
-        if (this.timeoutHandle) clearTimeout(this.timeoutHandle);
-        this.timeoutHandle = undefined;
-
-        if (this.promise) await this.promise;
-        this.emit("stopped");
-    }
-
-    private async step() {
         this.iteration++;
-
-        this.emit("stepping");
 
         const { versionMap, config } = this;
 
@@ -102,16 +98,7 @@ export class UpdaterService extends EventEmitter {
                 this.emit("error", error);
             }
         }
-
-        this.emit("stepped");
     }
-
-    private cycle = () => this.promise = this.step().
-        catch(error => this.emit("error", error)).
-        then(() => {
-            const { interval } = this.config;
-            this.timeoutHandle = setTimeout(this.cycle, interval);
-        })
 
     private async getRequiredVersion(steamId: number, version: number) {
         const { steamApi } = this;

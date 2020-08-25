@@ -24,6 +24,7 @@ export class TestContext {
     private readonly socketSet = new Set<net.Socket>();
 
     private constructor() {
+        //
     }
 
     //#region initialize
@@ -69,11 +70,11 @@ export class TestContext {
                         case "0":
                             res.send({
                                 response: {
-                                    success: true,
-                                    up_to_date: false,
-                                    version_is_listable: false,
-                                    required_version: 4783667,
-                                    message: "Your server is out of date, please upgrade",
+                                    "success": true,
+                                    "up_to_date": false,
+                                    "version_is_listable": false,
+                                    "required_version": 4783667,
+                                    "message": "Your server is out of date, please upgrade",
                                 },
                             });
                             break;
@@ -81,9 +82,9 @@ export class TestContext {
                         case "4783668":
                             res.send({
                                 response: {
-                                    success: true,
-                                    up_to_date: true,
-                                    version_is_listable: true,
+                                    "success": true,
+                                    "up_to_date": true,
+                                    "version_is_listable": true,
                                 },
                             });
                             break;
@@ -91,11 +92,11 @@ export class TestContext {
                         default:
                             res.send({
                                 response: {
-                                    success: true,
-                                    up_to_date: false,
-                                    version_is_listable: false,
-                                    required_version: 4783668,
-                                    message: "Your server is out of date, please upgrade",
+                                    "success": true,
+                                    "up_to_date": false,
+                                    "version_is_listable": false,
+                                    "required_version": 4783668,
+                                    "message": "Your server is out of date, please upgrade",
                                 },
                             });
                             break;
@@ -107,11 +108,11 @@ export class TestContext {
                         case "0":
                             res.send({
                                 response: {
-                                    success: true,
-                                    up_to_date: false,
-                                    version_is_listable: false,
-                                    required_version: 13666,
-                                    message: "Your server is out of date, please upgrade",
+                                    "success": true,
+                                    "up_to_date": false,
+                                    "version_is_listable": false,
+                                    "required_version": 13666,
+                                    "message": "Your server is out of date, please upgrade",
                                 },
                             });
                             break;
@@ -119,9 +120,9 @@ export class TestContext {
                         case "13666":
                             res.send({
                                 response: {
-                                    success: true,
-                                    up_to_date: true,
-                                    version_is_listable: true,
+                                    "success": true,
+                                    "up_to_date": true,
+                                    "version_is_listable": true,
                                 },
                             });
                             break;
@@ -129,11 +130,11 @@ export class TestContext {
                         default:
                             res.send({
                                 response: {
-                                    success: true,
-                                    up_to_date: false,
-                                    version_is_listable: false,
-                                    required_version: 13666,
-                                    message: "Your server is out of date, please upgrade",
+                                    "success": true,
+                                    "up_to_date": false,
+                                    "version_is_listable": false,
+                                    "required_version": 13666,
+                                    "message": "Your server is out of date, please upgrade",
                                 },
                             });
                             break;

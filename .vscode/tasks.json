@@ -13,6 +13,16 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "type": "npm",
+            "script": "coverage",
+            "problemMatcher": [],
+            "label": "npm: coverage",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
         }
     ]
 }

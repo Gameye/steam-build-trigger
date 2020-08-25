@@ -1,5 +1,5 @@
-import * as test from "blue-tape";
 import { HttpError } from "http-errors";
+import * as test from "tape-promise/tape";
 import { UpdaterService } from "./service";
 import { TestContext } from "./test";
 
@@ -99,9 +99,8 @@ test("http-error", t => TestContext.with(async ({
             t.equal(err.status, 404);
             t.equal(err.statusCode, 404);
             t.equal(err.message, "Not Found");
-            err = null;
         }
-        if (err) throw err;
+        else throw err;
     }
 
     await service.stop();

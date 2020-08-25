@@ -1,29 +1,34 @@
 {
   "name": "@gameye/steam-build-trigger",
   "description": "",
-  "main": "./node/main.js",
-  "module": "./module/main.js",
-  "types": "./types/main.d.ts",
+  "main": "node/main.js",
+  "module": "module/main.js",
+  "types": "types/main.d.ts",
+  "files": [
+    "node/**/*",
+    "module/**/*",
+    "types/**/*"
+  ],
   "scripts": {
     "prepare": "npm run compile",
     "compile": "tsc && tsc --project tsconfig.module.json",
     "clean": "rm -rf node types module",
     "test": "npm run spec-all",
-    "lint": "tslint \"src/**/*.ts\"",
+    "lint": "eslint \"src/**/*.ts\"",
     "spec": "tape --require \"ts-node/register\"",
     "spec-all": "npm run spec \"src/**/*.spec.ts\"",
-    "coverage": "nyc --report-dir report --reporter text-summary --reporter lcov --include \"src/**/*.ts\" --exclude \"src/**/*.spec.ts\" --extension \".ts\" npm test"
+    "coverage": "nyc --reporter text-summary --reporter lcov --reporter json npm test"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/blue-tape": "^0.1.33",
     "@types/tape": "^4.13.0",
-    "blue-tape": "^1.0.0",
+    "@types/tape-promise": "^4.0.1",
+    "eslint-config-gameye": "^0.1.3",
     "nyc": "^15.1.0",
     "tape": "^5.0.1",
+    "tape-promise": "^4.0.0",
     "ts-node": "^9.0.0",
-    "tslint": "^5.20.1",
     "typescript": "^4.0.2"
   },
   "dependencies": {

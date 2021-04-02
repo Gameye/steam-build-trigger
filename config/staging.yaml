@@ -1,15 +1,6 @@
 branch: develop
 games:
-  - name: csgo
-    steamId: 730
-    repos:
-      - csgo-image
-      - csgo-dem-image
-      - csgo-get5-image
-      - csgo-practice-image
-      - csgo-cmode-image
   - name: tf2
     steamId: 440
     repos:
-      - tf2-image
       - tf2-serveme-image
